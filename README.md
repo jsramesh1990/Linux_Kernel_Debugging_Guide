@@ -31,7 +31,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                    KERNEL BUG TAXONOMY                          │
 ├─────────────────────────────────────────────────────────────────┤
-│ • NULL Pointer Dereference  → "Oops: unable to handle kernel   │
+│ • NULL Pointer Dereference  → "Oops: unable to handle kernel    │
 │    (most common)               NULL pointer dereference"        │
 │                                                                 │
 │ • Use-After-Free            → "BUG: KASAN: use-after-free"      │
@@ -39,14 +39,14 @@
 │                                                                 │
 │ • Double Free               → "kernel BUG at mm/slub.c:XXX"     │
 │                                                                 │
-│ • Race Condition           → "BUG: spinlock lockup suspected"  │
+│ • Race Condition           → "BUG: spinlock lockup suspected"   │
 │    (locking bugs)                                               │
 │                                                                 │
 │ • Stack Overflow            → "Kernel stack overflow detected"  │
 │                                                                 │
 │ • Memory Leak               → kmemleak report                   │
 │                                                                 │
-│ • Deadlock                  → "INFO: possible recursive        │
+│ • Deadlock                  → "INFO: possible recursive         │
 │                                 locking detected"               │
 │                                                                 │
 │ • Scheduling Latency        → Scheduling dmesg warnings         │
@@ -73,24 +73,24 @@
 
 ```
 User-Space Debugging:               Kernel Debugging:
-┌─────────────────┐                ┌─────────────────┐
-│ "My program      │                │ "The system      │
-│  crashed."       │                │  crashed."       │
-│ ↓                │                │ ↓                │
-│ Run under GDB    │                │ Reproduce with   │
-│ ↓                │                │  debug options   │
-│ Find bug         │                │ ↓                │
-│ ↓                │                │ Analyze oops/    │
-│ Fix, recompile   │                │  call trace      │
-│ ↓                │                │ ↓                │
-│ "Works now!"     │                │ Add printks      │
-└─────────────────┘                │ ↓                │
-                                   │ Rebuild kernel    │
-                                   │ ↓                │
-                                   │ Reboot (30 sec)   │
-                                   │ ↓                │
-                                   │ "Still crashes!"  │
-                                   └─────────────────┘
+┌─────────────-────┐               ┌-───────────────--──┐
+│ "My program      │               │ "The system        │
+│  crashed."       │               │  crashed."         │
+│ ↓                │               │ ↓                  │
+│ Run under GDB    │               │ Reproduce with     │
+│ ↓                │               │  debug options     │
+│ Find bug         │               │ ↓                  │
+│ ↓                │               │ Analyze oops/      │
+│ Fix, recompile   │               │  call trace        │
+│ ↓                │               │ ↓                  │
+│ "Works now!"     │               │ Add printks        │
+└────────────-─────┘               │ ↓                  │
+                                   │ Rebuild kernel     │
+                                   │ ↓                  │
+                                   │ Reboot (30 sec)    │
+                                   │ ↓                  │
+                                   │ "Still crashes!"   │
+                                   └────────────────---─┘
 ```
 
 ---
@@ -100,21 +100,21 @@ User-Space Debugging:               Kernel Debugging:
 ## The Debugging Toolbox
 
 ```bash
-┌────────────────────────────────────────────────────────────────────┐
+┌────────────────────────────────────────────────────────────────-────┐
 │                        KERNEL DEBUGGING TOOLS                       │
-├──────────────┬────────────────────────────┬───────────────────────┤
-│ Level        │ Tool                       │ Best For              │
-├──────────────┼────────────────────────────┼───────────────────────┤
-│ Simple       │ printk(), dump_stack()     │ Quick & dirty logging  │
-│ Intermediate │ Dynamic Debugging          │ Runtime enable/disable │
-│              │ ftrace                     │ Function call tracing  │
-│              │ kprobes                    │ Dynamic instrumentation│
-│ Advanced     │ KGDB                       │ Interactive debugging  │
-│              │ KASAN                      │ Memory corruption      │
-│              │ lockdep                    │ Locking deadlocks      │
-│ Performance  │ perf                       │ Profiling              │
-│              │ eBPF                       │ Dynamic tracing        │
-└──────────────┴────────────────────────────┴───────────────────────┘
+├──────────────┬────────────────────────────┬──────────────────────--─┤
+│ Level        │ Tool                       │ Best For                │
+├──────────────┼────────────────────────────┼──────────────────────--─┤
+│ Simple       │ printk(), dump_stack()     │ Quick & dirty logging   │
+│ Intermediate │ Dynamic Debugging          │ Runtime enable/disable  │
+│              │ ftrace                     │ Function call tracing   │
+│              │ kprobes                    │ Dynamic instrumentation │
+│ Advanced     │ KGDB                       │ Interactive debugging   │
+│              │ KASAN                      │ Memory corruption       │
+│              │ lockdep                    │ Locking deadlocks       │
+│ Performance  │ perf                       │ Profiling               │
+│              │ eBPF                       │ Dynamic tracing         │
+└──────────────┴────────────────────────────┴──────────────────────--─┘
 ```
 
 ## When to Use What
@@ -136,10 +136,10 @@ Problem Type                    Recommended Tool
 
 # printk() - The Simplest Debugger
 
-## 📚 Definition
+##  Definition
 **printk()** is the kernel's version of printf(). It writes messages to the kernel log buffer (`/proc/kmsg`) which can be viewed with `dmesg`.
 
-## 📝 Syntax
+##  Syntax
 ```c
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -168,12 +168,12 @@ pr_info("Informational\n");
 pr_debug("Debug-level messages\n");  // Requires DEBUG defined
 ```
 
-## 💡 Explanation
+##  Explanation
 - Messages are stored in a ring buffer (size configurable at boot)
 - Log levels determine if message is printed to console (controlled by `printk` sysctl)
 - `pr_debug()` is compiled out unless `DEBUG` is defined
 
-## 📋 Useful printk Formats
+##  Useful printk Formats
 ```c
 // Standard formats
 printk("Value: %d %x %lu\n", val, val, long_val);
@@ -187,7 +187,7 @@ printk("%s called from %pS\n", __func__, __builtin_return_address(0));
 printk("Current process: %s (PID %d)\n", current->comm, current->pid);
 ```
 
-## 🎭 Visual Comedy
+##  Visual Comedy
 ```
 printk(KERN_INFO "Driver loaded\n");
                     ↓
@@ -204,17 +204,17 @@ printk(KERN_INFO "Driver loaded\n");
 printk(KERN_DEBUG "x = %d\n", x);  // Invisible if debug disabled
 pr_debug("Only appears if DEBUG defined\n");  // Compiler magic
 
-"It's printf's punk rock cousin. Loud, simple, and everyone uses it." 🤘
+"It's printf's punk rock cousin. Loud, simple, and everyone uses it." 
 ```
 
 ---
 
 # Dynamic Debugging (dyndbg)
 
-## 📚 Definition
+##  Definition
 **Dynamic Debugging** allows enabling/disabling `pr_debug()` and `dev_dbg()` messages at runtime without recompiling the kernel.
 
-## 📝 Syntax
+##  Syntax
 ```bash
 # Mount debugfs (if not already)
 mount -t debugfs none /sys/kernel/debug
@@ -238,7 +238,7 @@ echo "module mydriver -p" > control
 echo "file mydriver.c line 200-300 +p" > control
 ```
 
-## 💡 In Code
+##  In Code
 ```c
 #include <linux/module.h>
 #include <linux/device.h>
@@ -251,14 +251,14 @@ dev_dbg(&my_device, "Device-specific debug: %d\n", val);
 #define MY_DEBUG(fmt, ...) pr_debug(fmt, ##__VA_ARGS__)
 ```
 
-## 📋 Kernel Boot Parameters
+##  Kernel Boot Parameters
 ```bash
 # Enable on boot
 dyndbg="module mydriver +p"
 dyndbg="file drivers/usb/core/* +p"
 ```
 
-## 🎭 Visual Comedy
+##  Visual Comedy
 ```
 Without Dynamic Debug:
     Code: pr_debug("Entering function\n");
@@ -269,7 +269,7 @@ Without Dynamic Debug:
     "Still not working!"
     Add more printks...
     Recompile again...
-    🔄 Infinite loop
+     Infinite loop
 
 With Dynamic Debug:
     Code: pr_debug("Entering function\n");
@@ -284,17 +284,17 @@ With Dynamic Debug:
     ↓
     Back to production!
 
-"Like a light switch for your print statements." 💡
+"Like a light switch for your print statements." 
 ```
 
 ---
 
 # Kernel Probes (kprobes/kretprobes)
 
-## 📚 Definition
+##  Definition
 **kprobes** allows dynamic instrumentation of any kernel function - inserting breakpoints that execute handler code before/after the function.
 
-## 📝 Syntax - kprobe
+##  Syntax - kprobe
 ```c
 #include <linux/kprobes.h>
 
@@ -347,7 +347,7 @@ static void __exit mykprobe_exit(void)
 }
 ```
 
-## 📝 Syntax - kretprobe (Return Probe)
+##  Syntax - kretprobe (Return Probe)
 ```c
 #include <linux/kprobes.h>
 
@@ -378,7 +378,7 @@ static int __init mykretprobe_init(void)
 }
 ```
 
-## 📋 Command Line with kprobe-tracer
+##  Command Line with kprobe-tracer
 ```bash
 # Use dynamic kprobes via debugfs (no coding!)
 echo "p:myprobe do_fork" > /sys/kernel/debug/tracing/kprobe_events
@@ -387,7 +387,7 @@ echo 1 > /sys/kernel/debug/tracing/events/kprobes/myprobe/enable
 cat /sys/kernel/debug/tracing/trace_pipe
 ```
 
-## 🎭 Visual Comedy
+##  Visual Comedy
 ```
 kprobe Execution Flow:
 
@@ -409,17 +409,17 @@ kprobe Execution Flow:
          ↓                      │
     Return to caller ←───────────┘
 
-"It's like putting a spy camera inside any function." 📷
+"It's like putting a spy camera inside any function." 
 ```
 
 ---
 
 # Ftrace - Function Tracer
 
-## 📚 Definition
+##  Definition
 **Ftrace** is the kernel's built-in function tracer. It can trace function calls, interrupts, scheduling events, and more with minimal overhead.
 
-## 📝 Syntax - Setup & Usage
+##  Syntax - Setup & Usage
 ```bash
 # Mount tracefs
 mount -t tracefs none /sys/kernel/tracing
@@ -460,7 +460,7 @@ cat trace
 cat trace_pipe   # Live stream
 ```
 
-## 📊 Understanding Output
+##  Understanding Output
 ```bash
 # function tracer output
 # tracer: function
@@ -483,7 +483,7 @@ cat trace_pipe   # Live stream
   1)   0.234 us    |  }
 ```
 
-## 📋 Advanced Ftrace Features
+##  Advanced Ftrace Features
 ```bash
 # Enable stack trace on function entry
 echo 1 > options/func_stack_trace
@@ -498,14 +498,14 @@ echo 5 > max_graph_depth
 echo 0 > tracing_cpumask   # Trace CPU 0 only
 ```
 
-## 📝 Kernel Command Line
+##  Kernel Command Line
 ```bash
 # Enable ftrace at boot
 ftrace=function
 ftrace_filter=do_fork
 ```
 
-## 🎭 Visual Comedy
+##  Visual Comedy
 ```
 Ftrace View:
     "I see every function call."
@@ -525,17 +525,17 @@ Ftrace View:
             wake_up_new_task()
         }
 
-"Like X-ray vision for your kernel." 🦸
+"Like X-ray vision for your kernel." 
 ```
 
 ---
 
 # KGDB - Kernel GDB
 
-## 📚 Definition
+##  Definition
 **KGDB** (Kernel GDB) allows full interactive debugging of the Linux kernel using GDB, with breakpoints, watchpoints, single-stepping, and variable inspection.
 
-## 🔧 Setup Requirements
+##  Setup Requirements
 ```bash
 # 1. Compile kernel with KGDB support
 CONFIG_KGDB=y
@@ -555,7 +555,7 @@ gdb vmlinux
 (gdb) target remote /dev/ttyS0
 ```
 
-## 📝 GDB Commands for Kernel
+##  GDB Commands for Kernel
 ```gdb
 # Standard GDB commands (all work!)
 break do_fork              # Break on function
@@ -577,7 +577,7 @@ lx-task-by-pid 1234        # Find task by PID
 lx-tid-by-pid 1234         # Thread ID by PID
 ```
 
-## 📋 Using KDB (built-in debugger)
+##  Using KDB (built-in debugger)
 ```bash
 # Enter KDB (magic sysrq)
 echo g > /proc/sysrq-trigger
@@ -595,7 +595,7 @@ bp <function>              # Set breakpoint
 bl                         # List breakpoints
 ```
 
-## 🎭 Visual Comedy
+##  Visual Comedy
 ```
 KGDB Experience:
 
@@ -609,24 +609,24 @@ Host Machine:                Target Machine:
        ↓                           ↓
    "do_fork hit!"              *FREEZE*
        ↓                           ↓
-   "print arg"                  📸
+   "print arg"                  
        ↓                           ↓
    "step into"                  🚶
        ↓                           ↓
-   "continue"                   ▶️
+   "continue"                   
 
 "It's like having a remote control for the kernel.
-Press pause, inspect everything, press play." 🎮
+Press pause, inspect everything, press play." 
 ```
 
 ---
 
 # KASAN - Kernel Address Sanitizer
 
-## 📚 Definition
+##  Definition
 **KASAN** (Kernel Address SANitizer) is a dynamic memory error detector that catches use-after-free, out-of-bounds, and other memory bugs.
 
-## 🔧 Setup
+##  Setup
 ```bash
 CONFIG_KASAN=y
 CONFIG_KASAN_GENERIC=y   # or CONFIG_KASAN_SW_TAGS
@@ -635,7 +635,7 @@ CONFIG_KASAN_EXTRA=y     # More checks
 CONFIG_KASAN_STACK=1     # Check stack variables
 ```
 
-## 📊 What KASAN Detects
+##  What KASAN Detects
 ```c
 // KASAN catches these:
 buffer[100] = 1;              // Out of bounds
@@ -644,7 +644,7 @@ kmalloc(-1);                  // Invalid size
 memcpy(dest, src, huge_len);  // Memory overlap
 ```
 
-## 📝 Example Report
+##  Example Report
 ```
 ==================================================================
 BUG: KASAN: use-after-free in my_function+0x123/0x456
@@ -683,11 +683,11 @@ The buggy address is located 0 bytes inside of
 ==================================================================
 ```
 
-## 🎭 Visual Comedy
+##  Visual Comedy
 ```
 Without KASAN:
     Use-after-free → Silent corruption → Crash hours later
-    "Where did that come from?" 😭
+    "Where did that come from?" 
 
 With KASAN:
     Use-after-free → IMMEDIATE DETECTION
@@ -695,19 +695,19 @@ With KASAN:
     "Here's the stack trace"
     "Here's the allocation site"
     "Here's the freeing site"
-    "Here's the guilty party" 🎯
+    "Here's the guilty party" 
 
-"KASAN is a bloodhound for memory bugs." 🐕
+"KASAN is a bloodhound for memory bugs." 
 ```
 
 ---
 
 # Lock Debugging (lockdep)
 
-## 📚 Definition
+##  Definition
 **lockdep** (Lock Dependency Validator) detects potential deadlocks, lock inversions, and incorrect lock usage in the kernel.
 
-## 🔧 Setup
+##  Setup
 ```bash
 CONFIG_PROVE_LOCKING=y  # lockdep
 CONFIG_LOCK_STAT=y      # Lock statistics
@@ -715,7 +715,7 @@ CONFIG_DEBUG_LOCK_ALLOC=y
 CONFIG_DEBUG_SPINLOCK=y
 ```
 
-## 📊 Lockdep Reports
+##  Lockdep Reports
 ```bash
 # Deadlock detection
 =============================================
@@ -757,7 +757,7 @@ other info that might help us debug this:
  *** DEADLOCK ***
 ```
 
-## 📝 Fixing Lockdep Warnings
+##  Fixing Lockdep Warnings
 ```c
 // Wrong (potential deadlock)
 void function1(void) {
@@ -786,7 +786,7 @@ void function2(void) {
 }
 ```
 
-## 🎭 Visual Comedy
+##  Visual Comedy
 ```
 Lockdep's View of Your Code:
 
@@ -802,7 +802,7 @@ Lockdep: "That's a circular dependency!"
 Lockdep: *SPAMS KERNEL LOG*
 
 "Lockdep is the relationship counselor of the kernel.
-It tells you when your locks are in a toxic relationship." 💔
+It tells you when your locks are in a toxic relationship." 
 ```
 
 ---
@@ -811,10 +811,10 @@ It tells you when your locks are in a toxic relationship." 💔
 
 ## kmemleak - Memory Leak Detector
 
-### 📚 Definition
+###  Definition
 **kmemleak** detects kernel memory leaks by scanning memory and tracking allocations.
 
-### 🔧 Setup
+###  Setup
 ```bash
 CONFIG_DEBUG_KMEMLEAK=y
 CONFIG_DEBUG_KMEMLEAK_EARLY_LOG_SIZE=40000
@@ -823,7 +823,7 @@ CONFIG_DEBUG_KMEMLEAK_EARLY_LOG_SIZE=40000
 kmemleak=on
 ```
 
-### 📝 Commands
+###  Commands
 ```bash
 # Trigger scan
 echo scan > /sys/kernel/debug/kmemleak
@@ -835,7 +835,7 @@ cat /sys/kernel/debug/kmemleak
 echo clear > /sys/kernel/debug/kmemleak
 ```
 
-### 📊 Sample Output
+###  Sample Output
 ```
 unreferenced object 0xffff880012345678 (size 256):
   comm "my_driver", pid 1234, jiffies 4294937296
@@ -849,10 +849,10 @@ unreferenced object 0xffff880012345678 (size 256):
 
 ## SLUB Debug
 
-### 📚 Definition
+###  Definition
 **SLUB debug** adds red zones and poisoning to detect memory corruption.
 
-### 🔧 Setup
+###  Setup
 ```bash
 CONFIG_SLUB_DEBUG=y
 CONFIG_SLUB_DEBUG_ON=y  # Enable by default
@@ -863,7 +863,7 @@ slub_debug=FPZUT
 # U = user tracking, T = trace
 ```
 
-### 📝 Example
+###  Example
 ```bash
 # Enable for all caches
 slub_debug=FPZUT
@@ -872,13 +872,13 @@ slub_debug=FPZUT
 slub_debug=FPZUT,kfree
 ```
 
-### 🎭 Visual Comedy
+###  Visual Comedy
 ```
 kmemleak to Memory Leaks:
     "You allocated memory in 1995 and never freed it."
     "It's still there. Just sitting."
     "Lost, alone, unreachable."
-    "Like my childhood dreams." 😢
+    "Like my childhood dreams." 
 
 SLUB Debug to Corruption:
     "Your buffer overflow wrote 0xDEADBEEF into my red zone."
@@ -898,7 +898,7 @@ SLUB Debug to Corruption:
 └─────────────────────────────────────────────────────────────────────────────────┘
 
                                     ┌─────────────┐
-                                    │   BUG! 💥   │
+                                    │   BUG!    │
                                     └──────┬──────┘
                                            │
                     ┌──────────────────────┼──────────────────────┐
@@ -959,7 +959,7 @@ SLUB Debug to Corruption:
                                           │
                                           ▼
                               ┌─────────────────────────┐
-                              │      BUG FOUND! 🎉       │
+                              │      BUG FOUND!         │
                               │    Fix → Test → Commit   │
                               └─────────────────────────┘
 ```
