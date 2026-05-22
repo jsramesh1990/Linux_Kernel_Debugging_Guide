@@ -1331,6 +1331,1387 @@ ftrace_filter=do_fork
 /proc/uptime            # Uptime + idle time
 ```
 
+
+#  Introduction to Yocto
+
+## Definition
+
+The Yocto Project is an open-source embedded Linux build framework used to create custom Linux distributions for embedded hardware.
+
+It is widely used in:
+
+* Automotive systems
+* Industrial controllers
+* Robotics
+* IoT gateways
+* Smart displays
+* Medical devices
+* Networking equipment
+
+---
+
+## Main Goal
+
+Yocto helps developers:
+
+* Build complete Linux operating systems
+* Cross compile for ARM/RISC-V/x86
+* Customize root filesystem
+* Build bootloader + kernel + packages
+* Generate production-ready images
+
+---
+
+## Core Components
+
+```text
+Yocto Project
+│
+├── Poky
+├── BitBake
+├── Layers
+├── Recipes
+├── BSP
+└── Metadata
+```
+
+---
+
+#  Complete Yocto Project Creation Step-by-Step
+
+## Objective
+
+Create a complete embedded Linux image.
+
+---
+
+# Step 1 — Install Required Packages
+
+## Ubuntu Host Dependencies
+
+```bash
+sudo apt update
+
+sudo apt install -y \
+ gawk wget git diffstat unzip texinfo gcc build-essential \
+ chrpath socat cpio python3 python3-pip python3-pexpect \
+ xz-utils debianutils iputils-ping python3-git python3-jinja2 \
+ libegl1-mesa libsdl1.2-dev pylint xterm
+```
+
+---
+
+# Step 2 — Download Poky
+
+## Syntax
+
+```bash
+git clone git://git.yoctoproject.org/poky
+```
+
+## Example
+
+```bash
+git clone git://git.yoctoproject.org/poky -b kirkstone
+```
+
+## Where to Use
+
+Use when starting a new Yocto project.
+
+## Result
+
+```text
+poky/
+├── bitbake/
+├── meta/
+├── meta-poky/
+└── oe-init-build-env
+```
+
+---
+
+# Step 3 — Initialize Build Environment
+
+## Syntax
+
+```bash
+source oe-init-build-env
+```
+
+## Result
+
+Creates:
+
+```text
+build/
+├── conf/
+├── downloads/
+├── sstate-cache/
+└── tmp/
+```
+
+---
+
+# Step 4 — Configure Build
+
+## File
+
+```text
+build/conf/local.conf
+```
+
+## Example
+
+```conf
+MACHINE = "qemux86-64"
+BB_NUMBER_THREADS = "8"
+PARALLEL_MAKE = "-j8"
+```
+
+---
+
+# Step 5 — Build Image
+
+## Syntax
+
+```bash
+bitbake core-image-minimal
+```
+
+## Where to Use
+
+Used to build a minimal Linux image.
+
+## Result
+
+Generated files:
+
+```text
+tmp/deploy/images/
+```
+
+Contains:
+
+* Kernel Image
+* Root filesystem
+* Device tree
+* Bootloader
+* SD card image
+
+---
+
+# Step 6 — Run in QEMU
+
+## Syntax
+
+```bash
+runqemu qemux86-64
+```
+
+## Result
+
+Linux boots inside emulator.
+
+---
+
+# 3. Writing Your First `.bb` Recipe
+
+## Definition
+
+A recipe tells BitBake how to build software.
+
+---
+
+# Recipe Structure
+
+## Example
+
+```bitbake
+DESCRIPTION = "Hello World Application"
+LICENSE = "MIT"
+
+SRC_URI = "file://hello.c"
+
+S = "${WORKDIR}"
+
+do_compile() {
+    ${CC} hello.c -o hello
+}
+
+do_install() {
+    install -d ${D}${bindir}
+    install -m 0755 hello ${D}${bindir}
+}
+```
+
+---
+
+# Important Variables
+
+| Variable     | Meaning                   |
+| ------------ | ------------------------- |
+| `${WORKDIR}` | Temporary build directory |
+| `${CC}`      | Cross compiler            |
+| `${D}`       | Destination rootfs        |
+| `${bindir}`  | `/usr/bin`                |
+
+---
+
+# Where Recipes Are Stored
+
+```text
+meta-custom/
+└── recipes-apps/
+    └── hello/
+        ├── hello.bb
+        └── hello.c
+```
+
+---
+
+# Build Recipe
+
+## Syntax
+
+```bash
+bitbake hello
+```
+
+---
+
+# Add Recipe to Image
+
+## local.conf
+
+```conf
+IMAGE_INSTALL += "hello"
+```
+
+---
+
+# Debugging Recipe Issues
+
+## Common Errors
+
+| Error             | Cause              |
+| ----------------- | ------------------ |
+| do_compile failed | Compiler issue     |
+| file not found    | SRC_URI incorrect  |
+| install failed    | Wrong install path |
+
+---
+
+# Useful Debug Commands
+
+```bash
+bitbake hello -c devshell
+```
+
+```bash
+bitbake hello -e
+```
+
+```bash
+bitbake hello -c clean
+```
+
+---
+
+# 4. Creating a Custom Layer
+
+## Definition
+
+Layers organize metadata and recipes.
+
+---
+
+# Create Layer
+
+## Syntax
+
+```bash
+bitbake-layers create-layer meta-mycompany
+```
+
+---
+
+# Layer Structure
+
+```text
+meta-mycompany/
+├── conf/
+│   └── layer.conf
+├── recipes-core/
+├── recipes-kernel/
+└── recipes-apps/
+```
+
+---
+
+# Add Layer to Build
+
+## Syntax
+
+```bash
+bitbake-layers add-layer ../meta-mycompany
+```
+
+---
+
+# Verify Layers
+
+```bash
+bitbake-layers show-layers
+```
+
+---
+
+# layer.conf Example
+
+```conf
+BBPATH .= ":${LAYERDIR}"
+
+BBFILES += "${LAYERDIR}/recipes-*/*/*.bb"
+```
+
+---
+
+# Where to Use
+
+Custom layers are used for:
+
+* Company applications
+* Drivers
+* Kernel patches
+* Board support
+* Custom images
+
+---
+
+# 5. Kernel Customization in Yocto
+
+## Definition
+
+Kernel customization modifies:
+
+* Drivers
+* Filesystems
+* Networking
+* Security
+* Hardware support
+
+---
+
+# Configure Kernel
+
+## Syntax
+
+```bash
+bitbake virtual/kernel -c menuconfig
+```
+
+---
+
+# Save Kernel Config
+
+```bash
+bitbake virtual/kernel -c savedefconfig
+```
+
+---
+
+# Kernel Recipe Example
+
+```bitbake
+SRC_URI += "file://my_patch.patch"
+```
+
+---
+
+# Add Kernel Patch
+
+## Directory
+
+```text
+recipes-kernel/linux/
+```
+
+---
+
+# Common Kernel Debugging
+
+## View Logs
+
+```bash
+cat tmp/work/*/linux*/temp/log.do_compile
+```
+
+---
+
+# Debug Kernel Boot
+
+Use serial console:
+
+```text
+UART0 @ 115200 baud
+```
+
+---
+
+# Common Problems
+
+| Problem        | Cause                  |
+| -------------- | ---------------------- |
+| Kernel panic   | Wrong rootfs           |
+| Boot hang      | Device tree issue      |
+| Driver missing | Kernel config disabled |
+
+---
+
+# 6. Device Tree Detailed Tutorial
+
+## Definition
+
+Device Tree describes hardware to Linux.
+
+Used mainly on:
+
+* ARM
+* ARM64
+* RISC-V
+
+---
+
+# Device Tree Structure
+
+```dts
+/ {
+    model = "MyBoard";
+
+    memory {
+        reg = <0x80000000 0x40000000>;
+    };
+};
+```
+
+---
+
+# Common Hardware Nodes
+
+| Node     | Purpose         |
+| -------- | --------------- |
+| uart     | Serial port     |
+| i2c      | I2C bus         |
+| spi      | SPI bus         |
+| gpio     | GPIO controller |
+| ethernet | Network         |
+
+---
+
+# UART Example
+
+```dts
+&uart0 {
+    status = "okay";
+    current-speed = <115200>;
+};
+```
+
+---
+
+# GPIO Example
+
+```dts
+leds {
+    compatible = "gpio-leds";
+};
+```
+
+---
+
+# Compile Device Tree
+
+## Syntax
+
+```bash
+dtc -I dts -O dtb myboard.dts -o myboard.dtb
+```
+
+---
+
+# Debug Device Tree
+
+## Check Loaded DT
+
+```bash
+cat /proc/device-tree/model
+```
+
+---
+
+# Common Device Tree Errors
+
+| Error               | Cause                   |
+| ------------------- | ----------------------- |
+| Device not detected | Wrong compatible string |
+| Probe failed        | Incorrect GPIO/IRQ      |
+| Boot crash          | Memory config wrong     |
+
+---
+
+# 7. BSP Development
+
+## Definition
+
+BSP = Board Support Package
+
+Provides:
+
+* Bootloader config
+* Kernel config
+* Device tree
+* Drivers
+* Firmware
+
+---
+
+# BSP Components
+
+```text
+meta-board/
+├── recipes-bsp/
+├── recipes-kernel/
+├── recipes-core/
+└── conf/machine/
+```
+
+---
+
+# Machine Configuration
+
+## Example
+
+```conf
+MACHINE = "myboard"
+```
+
+---
+
+# Machine Config File
+
+```text
+conf/machine/myboard.conf
+```
+
+## Example
+
+```conf
+KERNEL_DEVICETREE = "myboard.dtb"
+UBOOT_MACHINE = "myboard_defconfig"
+```
+
+---
+
+# BSP Bring-Up Steps
+
+1. Boot ROM
+2. U-Boot
+3. DRAM init
+4. Load kernel
+5. Device tree load
+6. Rootfs mount
+7. Linux boot
+
+---
+
+# BSP Debugging
+
+## Use Serial Logs
+
+Check:
+
+* U-Boot logs
+* Kernel logs
+* Driver probe logs
+
+---
+
+# 8. How Linux Boots on ARM Boards
+
+# Boot Flow
+
+```text
+Power ON
+   ↓
+Boot ROM
+   ↓
+SPL
+   ↓
+U-Boot
+   ↓
+Kernel
+   ↓
+Root Filesystem
+   ↓
+Applications
+```
+
+---
+
+# Stage 1 — Boot ROM
+
+Inside SoC.
+
+Responsibilities:
+
+* Initialize hardware
+* Load bootloader
+
+---
+
+# Stage 2 — SPL
+
+Small bootloader.
+
+Tasks:
+
+* DRAM initialization
+* Load U-Boot
+
+---
+
+# Stage 3 — U-Boot
+
+Tasks:
+
+* Load kernel
+* Load DTB
+* Pass bootargs
+
+Example:
+
+```bash
+booti ${kernel_addr_r} - ${fdt_addr_r}
+```
+
+---
+
+# Stage 4 — Linux Kernel
+
+Kernel initializes:
+
+* Scheduler
+* Memory
+* Drivers
+* Filesystems
+
+---
+
+# Stage 5 — Root Filesystem
+
+Mounted as `/`.
+
+Contains:
+
+* /bin
+* /etc
+* /usr
+* libraries
+
+---
+
+# Boot Debugging
+
+## Enable Early Printk
+
+```bash
+earlycon console=ttyS0,115200
+```
+
+---
+
+# 9. Yocto Interview Questions
+
+# Basic Questions
+
+## What is Yocto?
+
+Framework to build embedded Linux distributions.
+
+---
+
+## What is BitBake?
+
+Task execution engine.
+
+---
+
+## What is a Recipe?
+
+Build instructions for software.
+
+---
+
+## What is a Layer?
+
+Collection of recipes and metadata.
+
+---
+
+# Intermediate Questions
+
+## Difference between DEPENDS and RDEPENDS?
+
+| Type     | Meaning            |
+| -------- | ------------------ |
+| DEPENDS  | Build dependency   |
+| RDEPENDS | Runtime dependency |
+
+---
+
+## What is sstate-cache?
+
+Shared build cache.
+
+---
+
+## What is BSP?
+
+Board support package.
+
+---
+
+# Advanced Questions
+
+* Explain Linux boot flow.
+* Explain device tree.
+* Explain rootfs generation.
+* Explain package management.
+* Explain custom layer creation.
+* Explain kernel patching.
+
+---
+
+# 10. Real Industrial Yocto Workflow
+
+# Development Flow
+
+```text
+Requirements
+    ↓
+BSP Setup
+    ↓
+Kernel Customization
+    ↓
+Application Development
+    ↓
+Yocto Integration
+    ↓
+CI/CD Build
+    ↓
+Testing
+    ↓
+Release
+```
+
+---
+
+# Typical Teams
+
+| Team            | Responsibility |
+| --------------- | -------------- |
+| BSP Team        | Board bring-up |
+| Kernel Team     | Drivers        |
+| Middleware Team | Libraries      |
+| App Team        | Applications   |
+| QA Team         | Validation     |
+
+---
+
+# CI/CD Tools
+
+Commonly used:
+
+* Jenkins
+* GitLab CI
+* GitHub Actions
+
+---
+
+# Industrial Best Practices
+
+* Use LTS Yocto release
+* Use version pinning
+* Enable reproducible builds
+* Use sstate mirror
+* Automate builds
+* Use artifact servers
+
+---
+
+# 11. Buildroot vs Yocto Deep Comparison
+
+| Feature            | Yocto     | Buildroot |
+| ------------------ | --------- | --------- |
+| Complexity         | High      | Medium    |
+| Learning Curve     | Hard      | Easier    |
+| Package Management | Yes       | Limited   |
+| SDK Support        | Excellent | Basic     |
+| Industrial Usage   | Very High | Medium    |
+| Build Speed        | Slower    | Faster    |
+| Customization      | Excellent | Moderate  |
+
+---
+
+# When to Use Yocto
+
+Use Yocto for:
+
+* Long-term products
+* Large projects
+* OTA systems
+* Enterprise products
+
+---
+
+# When to Use Buildroot
+
+Use Buildroot for:
+
+* Simple projects
+* Fast prototyping
+* Small systems
+
+---
+
+# 12. Docker with Yocto
+
+## Definition
+
+Run Docker containers on embedded Linux.
+
+---
+
+# Enable Docker
+
+## local.conf
+
+```conf
+DISTRO_FEATURES += " virtualization"
+```
+
+---
+
+# Add Docker Packages
+
+```conf
+IMAGE_INSTALL += "docker"
+```
+
+---
+
+# Start Docker
+
+```bash
+systemctl start docker
+```
+
+---
+
+# Verify Docker
+
+```bash
+docker --version
+```
+
+---
+
+# Run Container
+
+```bash
+docker run hello-world
+```
+
+---
+
+# Embedded Docker Use Cases
+
+* Edge AI
+* Microservices
+* Cloud gateways
+* OTA applications
+
+---
+
+# Docker Debugging
+
+## Check Service
+
+```bash
+systemctl status docker
+```
+
+---
+
+# 13. OTA Update Systems in Yocto
+
+# Definition
+
+OTA = Over-The-Air update.
+
+Allows remote firmware updates.
+
+---
+
+# Popular OTA Systems
+
+| Tool     | Usage             |
+| -------- | ----------------- |
+| SWUpdate | Embedded updates  |
+| RAUC     | Robust OTA        |
+| Mender   | Enterprise OTA    |
+| OSTree   | Immutable systems |
+
+---
+
+# SWUpdate Workflow
+
+```text
+Build Image
+    ↓
+Generate SWU Package
+    ↓
+Upload to Server
+    ↓
+Device Downloads
+    ↓
+Install Update
+```
+
+---
+
+# RAUC Features
+
+* A/B partition support
+* Rollback
+* Secure update
+
+---
+
+# OTA Best Practices
+
+* Use dual rootfs
+* Add rollback support
+* Use signed images
+* Use watchdogs
+
+---
+
+# OTA Debugging
+
+## Check Logs
+
+```bash
+journalctl -u rauc
+```
+
+---
+
+# 14. Debugging Yocto Build Failures
+
+# Important Log Locations
+
+```text
+tmp/work/*/temp/
+```
+
+---
+
+# Common Log Files
+
+| File             | Purpose        |
+| ---------------- | -------------- |
+| log.do_compile   | Compile logs   |
+| log.do_configure | Configure logs |
+| log.do_install   | Install logs   |
+
+---
+
+# Useful Commands
+
+## Clean Recipe
+
+```bash
+bitbake myapp -c clean
+```
+
+---
+
+## Force Rebuild
+
+```bash
+bitbake myapp -f -c compile
+```
+
+---
+
+## Open Development Shell
+
+```bash
+bitbake myapp -c devshell
+```
+
+---
+
+# Common Build Errors
+
+| Error            | Cause              |
+| ---------------- | ------------------ |
+| Fetch failed     | Internet/Git issue |
+| Configure failed | Missing dependency |
+| Compile failed   | Source issue       |
+| Install failed   | Wrong path         |
+
+---
+
+# Debug Strategy
+
+1. Read logs
+2. Reproduce manually
+3. Check dependencies
+4. Verify patches
+5. Verify layer compatibility
+
+---
+
+# 15. Embedded Linux Driver Development
+
+# Driver Types
+
+| Driver    | Purpose       |
+| --------- | ------------- |
+| Character | UART/I2C      |
+| Block     | Storage       |
+| Network   | Ethernet/WiFi |
+
+---
+
+# Simple Character Driver
+
+```c
+#include <linux/module.h>
+
+static int __init hello_init(void)
+{
+    printk("Driver Loaded\n");
+    return 0;
+}
+
+static void __exit hello_exit(void)
+{
+    printk("Driver Removed\n");
+}
+
+module_init(hello_init);
+module_exit(hello_exit);
+
+MODULE_LICENSE("GPL");
+```
+
+---
+
+# Build Driver
+
+```bash
+make -C /lib/modules/$(uname -r)/build M=$(pwd) modules
+```
+
+---
+
+# Load Driver
+
+```bash
+insmod hello.ko
+```
+
+---
+
+# Check Logs
+
+```bash
+dmesg | tail
+```
+
+---
+
+# Yocto Driver Integration
+
+## Add Module Recipe
+
+```bitbake
+inherit module
+```
+
+---
+
+# Driver Debugging
+
+## Check Probe
+
+```bash
+dmesg | grep probe
+```
+
+---
+
+# Common Driver Problems
+
+| Problem      | Cause         |
+| ------------ | ------------- |
+| Probe failed | DT mismatch   |
+| No interrupt | IRQ wrong     |
+| DMA error    | Memory config |
+
+---
+
+# 16. End-to-End Raspberry Pi Yocto Example
+
+# Step 1 — Clone Poky
+
+```bash
+git clone git://git.yoctoproject.org/poky
+```
+
+---
+
+# Step 2 — Clone Raspberry Pi Layer
+
+```bash
+git clone git://git.yoctoproject.org/meta-raspberrypi
+```
+
+---
+
+# Step 3 — Initialize Build
+
+```bash
+source oe-init-build-env
+```
+
+---
+
+# Step 4 — Add Layer
+
+```bash
+bitbake-layers add-layer ../meta-raspberrypi
+```
+
+---
+
+# Step 5 — Configure Machine
+
+## local.conf
+
+```conf
+MACHINE = "raspberrypi4"
+```
+
+---
+
+# Step 6 — Build Image
+
+```bash
+bitbake core-image-minimal
+```
+
+---
+
+# Step 7 — Flash Image
+
+```bash
+sudo dd if=core-image-minimal.wic of=/dev/sdX bs=4M
+```
+
+---
+
+# Step 8 — Boot Raspberry Pi
+
+Connect:
+
+* HDMI
+* Keyboard
+* SD card
+* UART serial
+
+---
+
+# Step 9 — Verify Boot
+
+## Check Kernel
+
+```bash
+uname -a
+```
+
+---
+
+# Step 10 — Test GPIO
+
+```bash
+ls /sys/class/gpio
+```
+
+---
+
+# Raspberry Pi Debugging
+
+## No Boot
+
+Check:
+
+* Power supply
+* SD card
+* UART logs
+* Correct image
+
+---
+
+# 17. Useful Commands Cheat Sheet
+
+# Build Commands
+
+```bash
+bitbake core-image-minimal
+```
+
+```bash
+bitbake -s
+```
+
+```bash
+bitbake-layers show-layers
+```
+
+---
+
+# Kernel Commands
+
+```bash
+bitbake virtual/kernel -c menuconfig
+```
+
+---
+
+# Cleaning Commands
+
+```bash
+bitbake myapp -c clean
+```
+
+```bash
+bitbake myapp -c cleansstate
+```
+
+---
+
+# Runtime Commands
+
+```bash
+dmesg
+```
+
+```bash
+journalctl
+```
+
+```bash
+systemctl status
+```
+
+---
+
+# 18. Debugging Checklist
+
+# Build Failures
+
+* Check layer compatibility
+* Check logs
+* Check patches
+* Verify dependencies
+* Verify disk space
+
+---
+
+# Boot Failures
+
+* Check UART logs
+* Check DTB
+* Check rootfs
+* Check bootargs
+* Check kernel config
+
+---
+
+# Driver Failures
+
+* Check probe logs
+* Verify interrupts
+* Verify GPIO
+* Verify clock
+* Verify power regulators
+
+---
+
+# OTA Failures
+
+* Verify partition layout
+* Verify signatures
+* Verify rollback
+* Check network
+
+---
+
+# 19. Recommended Learning Path
+
+# Beginner
+
+Learn:
+
+* Linux commands
+* Bash scripting
+* GCC
+* Makefiles
+* Git
+
+---
+
+# Intermediate
+
+Learn:
+
+* Yocto recipes
+* Layers
+* Device tree
+* U-Boot
+* Kernel configuration
+
+---
+
+# Advanced
+
+Learn:
+
+* Driver development
+* BSP development
+* Secure boot
+* OTA systems
+* Docker
+* CI/CD
+* RT Linux
+
+---
+
 ---
 
 ## Resources
