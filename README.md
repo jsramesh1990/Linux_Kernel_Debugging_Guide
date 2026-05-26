@@ -10,7 +10,7 @@
 
 ---
 
-# What is Kernel Debugging? (Definitions)
+# What is Kernel Debugging?
 
 ## Core Terminology
 
@@ -2729,17 +2729,17 @@ Learn:
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
-│   "Debugging is like being the detective in a crime movie      │
-│    where the victim is the kernel, the suspects are            │
-│    interrupts, memory corruption, and race conditions,         │
-│    and you forgot to save the call stack."                     │
+│   "Debugging is like being the detective in a crime movie       │
+│    where the victim is the kernel, the suspects are             │
+│    interrupts, memory corruption, and race conditions,          │
+│    and you forgot to save the call stack."                      │
 │                                                                 │
-│   "The kernel's idea of 'log message' is:                      │
-│    [    0.123456] general protection fault: 0000 [#1] SMP NOPTI│
+│   "The kernel's idea of 'log message' is:                       │
+│    [    0.123456] general protection fault: 0000 [#1] SMP NOPTI │
 │    Which is kernel-speak for 'YOU SHALL NOT PASS!'"             │
 │                                                                 │
-│   "When your printk works perfectly but the bug disappears,    │
-│    you've just discovered the Heisenbug."                      │
+│   "When your printk works perfectly but the bug disappears,     │
+│    you've just discovered the Heisenbug."                       │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
