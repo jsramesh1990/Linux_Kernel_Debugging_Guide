@@ -1,0 +1,45 @@
+Make All Test Scripts Executable
+bash
+
+chmod +x test/integration/*.sh
+
+Run Tests
+bash
+
+# Run individual test suite
+cd test/integration
+./test-system.sh
+./test-performance.sh
+./test-peripheral.sh
+
+# Run all tests
+./run-all-tests.sh
+
+# Or using make
+make test-all
+
+# Run specific test with make
+make test-system
+make test-performance
+make test-peripheral
+
+Test Directory Structure
+text
+
+test/
+└── integration/
+    ├── test-system.sh           # System tests
+    ├── test-performance.sh      # Performance tests
+    ├── test-peripheral.sh       # Peripheral tests
+    ├── run-all-tests.sh         # Run all test suites
+    ├── Makefile                 # Make targets
+    └── results/                 # Test results (generated)
+
+Test Coverage
+Test Suite	Tests	Description
+System Tests	14	Kernel, CPU, memory, processes, network, DNS, etc.
+Performance Tests	10	CPU, DDR, memory, storage, thermal, network, etc.
+Peripheral Tests	12	I2C, SPI, GPIO, HDMI, Ethernet, USB, PWM, etc.
+
+Total: 36+ tests covering all aspects of the Rock 3 Model B board.
+

@@ -1,0 +1,57 @@
+#!/bin/bash
+# ============================================
+# DDR Performance Data
+# Generated: $(date)
+# ============================================
+
+# This file would contain binary perf data.
+# To generate:
+#   perf record -a -e rockchip_ddr/bytes/ sleep 10
+#   perf script > traces/perf/ddr.data
+
+# Sample data:
+==================== DDR Performance Monitor ====================
+Time: 2023-06-23 18:00:01
+Duration: 1 second
+
+rockchip_ddr/cycles/: 125,456,789
+rockchip_ddr/read-bytes/: 2,345,678
+rockchip_ddr/write-bytes/: 1,234,567
+rockchip_ddr/bytes/: 3,580,245
+
+Bandwidth: 3.58 MB/s
+Read/Write Ratio: 1.9:1
+=============================================================
+
+==================== DDR Performance Monitor ====================
+Time: 2023-06-23 18:00:02
+Duration: 1 second
+
+rockchip_ddr/cycles/: 234,567,890
+rockchip_ddr/read-bytes/: 4,567,890
+rockchip_ddr/write-bytes/: 2,345,678
+rockchip_ddr/bytes/: 6,913,568
+
+Bandwidth: 6.91 MB/s
+Read/Write Ratio: 1.95:1
+=============================================================
+
+==================== DDR Performance Monitor ====================
+Time: 2023-06-23 18:00:03
+Duration: 1 second
+
+rockchip_ddr/cycles/: 98,765,432
+rockchip_ddr/read-bytes/: 1,234,567
+rockchip_ddr/write-bytes/: 876,543
+rockchip_ddr/bytes/: 2,111,110
+
+Bandwidth: 2.11 MB/s
+Read/Write Ratio: 1.41:1
+=============================================================
+
+Summary:
+Average Bandwidth: 4.20 MB/s
+Peak Bandwidth: 6.91 MB/s
+Min Bandwidth: 2.11 MB/s
+Total Bytes: 12,604,923
+Average Read/Write Ratio: 1.75:1

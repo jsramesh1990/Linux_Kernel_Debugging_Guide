@@ -1,0 +1,101 @@
+Create this verification table in your project:
+Peripheral	Debug Tool	Command Example	Expected Output
+DDR	perf	perf stat -a -e rockchip_ddr/bytes/ sleep 1	Shows MB transferred
+CPU	perf	perf stat -e cycles,instructions,cache-misses <cmd>	Performance counters
+Kernel Functions	ftrace/trace-cmd	trace-cmd record -p function_graph <cmd>	Function call graph
+System Calls	strace	strace -e open,read,write <cmd>	System call list
+HDMI	dmesg	dmesg | grep -i hdmi	HDMI controller info
+Ethernet	dmesg	dmesg | grep -i ethernet	MAC/PHY status
+I2C/SPI	trace-cmd	trace-cmd record -e i2c:* <cmd>	I2C transactions
+Binder	eBPF/BCC	bindersnoop.py	Binder IPC calls 
+
+
+========================================================================
+                PERIPHERAL VERIFICATION MATRIX
+                Rock 3 Model B - RK3568
+========================================================================
+
++------------------+------------------+----------------------------------+------------------------+
+|   COMPONENT      |     TOOL         |         COMMAND                  |     EXPECTED OUTPUT    |
++------------------+------------------+----------------------------------+------------------------+
+| I2C Bus          | i2cdetect        | i2cdetect -l                     | I2C bus list           |
+| I2C Devices      | i2cdetect        | i2cdetect -y 1                   | Device address list    |
+| I2C Read         | i2cget           | i2cget -y 1 0x50 0x00            | Register value (hex)   |
+| I2C Write        | i2cset           | i2cset -y 1 0x50 0x00 0xFF       | Success message        |
+| I2C Dump         | i2cdump          | i2cdump -y 1 0x50                | Register dump          |
++------------------+------------------+----------------------------------+------------------------+
+| SPI Devices      | ls               | ls /dev/spi*                     | Device file list       |
+| SPI Test         | spidev_test      | spidev_test -D /dev/spidev0.0 -v | Transfer results       |
+| SPI Send         | spidev_test      | spidev_test -p "\x01\x02\x03"    | Received data          |
++------------------+------------------+----------------------------------+------------------------+
+| GPIO Export      | echo             | echo 17 > /sys/class/gpio/export  | Success               |
+| GPIO Direction   | echo             | echo out > /sys/class/gpio/gpio17/direction | Success       |
+| GPIO Write       | echo             | echo 1 > /sys/class/gpio/gpio17/value | Success          |
+| GPIO Read        | cat              | cat /sys/class/gpio/gpio17/value  | 0 or 1                |
+| GPIO Unexport    | echo             | echo 17 > /sys/class/gpio/unexport | Success              |
++------------------+------------------+----------------------------------+------------------------+
+| HDMI Status      | cat              | cat /sys/class/drm/card0-HDMI-A-1/status | connected/disconnected |
+| HDMI EDID        | cat              | cat /sys/class/drm/card0-HDMI-A-1/edid > edid.bin | EDID data     |
+| HDMI EDID Decode | edid-decode      | edid-decode edid.bin             | Display info           |
+| HDMI Resolution  | xrandr           | xrandr --output HDMI-1 --mode 1920x1080 | Resolution set |
++------------------+------------------+----------------------------------+------------------------+
+| Ethernet Status  | ip               | ip link show eth0                | Interface status       |
+| Ethernet Speed   | ethtool          | ethtool eth0                     | Speed/Duplex info      |
+| Ethernet Stats   | ethtool          | ethtool -S eth0                  | Statistics             |
+| Ethernet Capture | tcpdump          | tcpdump -i eth0 -c 10            | Packet capture         |
++------------------+------------------+----------------------------------+------------------------+
+| USB Devices      | lsusb            | lsusb                            | USB device list        |
+| USB Tree         | lsusb            | lsusb -t                         | USB tree structure     |
+| USB Details      | lsusb            | lsusb -v                         | Device details         |
++------------------+------------------+----------------------------------+------------------------+
+| PWM Export       | echo             | echo 0 > /sys/class/pwm/pwmchip0/export | Success        |
+| PWM Period       | echo             | echo 1000000 > /sys/class/pwm/pwm0/period | Success        |
+| PWM Duty Cycle   | echo             | echo 500000 > /sys/class/pwm/pwm0/duty_cycle | Success     |
+| PWM Enable       | echo             | echo 1 > /sys/class/pwm/pwm0/enable | Success             |
++------------------+------------------+----------------------------------+------------------------+
+| CPU Temp         | cat              | cat /sys/class/thermal/thermal_zone0/temp | Temperature in °C x1000 |
+| GPU Temp         | cat              | cat /sys/class/thermal/thermal_zone1/temp | Temperature in °C x1000 |
+| All Temps        | for              | for z in /sys/class/thermal/thermal_zone*/; do cat $z/temp; done | All temps |
++------------------+------------------+----------------------------------+------------------------+
+| DDR Cycles       | perf             | perf stat -a -e rockchip_ddr/cycles/ sleep 1 | Cycle count    |
+| DDR Read Bytes   | perf             | perf stat -a -e rockchip_ddr/read-bytes/ sleep 1 | Bytes read    |
+| DDR Write Bytes  | perf             | perf stat -a -e rockchip_ddr/write-bytes/ sleep 1 | Bytes written |
+| DDR Total Bytes  | perf             | perf stat -a -e rockchip_ddr/bytes/ sleep 1 | Total bytes     |
+| DDR Ops          | perf             | perf stat -a -e rockchip_ddr/all-ops/ sleep 1 | Total ops      |
++------------------+------------------+----------------------------------+------------------------+
+| CPU Cycles       | perf             | perf stat -e cycles sleep 1      | Cycle count            |
+| CPU Instructions | perf             | perf stat -e instructions sleep 1 | Instruction count     |
+| Cache Misses     | perf             | perf stat -e cache-misses sleep 1 | Miss count            |
+| Context Switches | perf             | perf stat -e context-switches sleep 1 | Switch count        |
++------------------+------------------+----------------------------------+------------------------+
+| Kernel Functions | ftrace           | echo function > /sys/kernel/debug/tracing/current_tracer | Function trace |
+| Function Graph   | ftrace           | echo function_graph > /sys/kernel/debug/tracing/current_tracer | Graph trace |
+| Sched Events     | ftrace           | echo 1 > /sys/kernel/debug/tracing/events/sched/*/enable | Event trace |
+| IRQ Events       | ftrace           | echo 1 > /sys/kernel/debug/tracing/events/irq/*/enable | IRQ trace |
++------------------+------------------+----------------------------------+------------------------+
+| System Calls     | strace           | strace -c ls                     | Call statistics        |
+| File Operations  | strace           | strace -e open,read,write ls     | File syscalls          |
+| Network Calls    | strace           | strace -e socket,connect ping    | Network syscalls       |
+| Process Calls    | strace           | strace -e fork,execve sh -c "ls" | Process syscalls       |
++------------------+------------------+----------------------------------+------------------------+
+
+========================================================================
+QUICK VERIFICATION CHECKLIST
+========================================================================
+
+[ ] I2C:   i2cdetect -y 1         → Shows devices
+[ ] SPI:   spidev_test -D /dev/spidev0.0 → Shows transfer
+[ ] GPIO:  echo 17 > /sys/class/gpio/export → Creates GPIO
+[ ] HDMI:  cat /sys/class/drm/card0-HDMI-A-1/status → connected/disconnected
+[ ] ETH:   ip link show eth0       → Shows UP/DOWN
+[ ] USB:   lsusb                   → Shows devices
+[ ] PWM:   echo 0 > /sys/class/pwm/pwmchip0/export → Success
+[ ] TEMP:  cat /sys/class/thermal/thermal_zone0/temp → Temperature
+[ ] DDR:   perf stat -a -e rockchip_ddr/bytes/ sleep 1 → Bandwidth
+[ ] CPU:   perf stat -e cycles sleep 1 → Cycle count
+[ ] FTRACE: echo function > /sys/kernel/debug/tracing/current_tracer → Works
+[ ] STRACE: strace -c ls → Shows statistics
+
+========================================================================
+END OF FILE
+========================================================================

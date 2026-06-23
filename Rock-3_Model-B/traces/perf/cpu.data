@@ -1,0 +1,48 @@
+#!/bin/bash
+# ============================================
+# CPU Profiling Data
+# Generated: $(date)
+# ============================================
+
+# This file would contain binary perf data.
+# To generate:
+#   perf record -a -g -F 99 sleep 10
+#   perf script > traces/perf/cpu.data
+
+# Sample perf script output:
+swapper     0 [000] 12345.678901:         1 cycles:ppp:
+        ffff80001008a4c0 _raw_spin_unlock_irqrestore+0x20 (kernel)
+        ffff80001008a4c0 _raw_spin_unlock_irqrestore+0x20 (kernel)
+        ffff80001008a4c0 _raw_spin_unlock_irqrestore+0x20 (kernel)
+        ffff80001008a4c0 _raw_spin_unlock_irqrestore+0x20 (kernel)
+        ffff80001008a4c0 _raw_spin_unlock_irqrestore+0x20 (kernel)
+
+kworker/u8:0  234 [001] 12345.678902:         1 cycles:ppp:
+        ffff80001008a4c0 _raw_spin_unlock_irqrestore+0x20 (kernel)
+        ffff80001008a4c0 _raw_spin_unlock_irqrestore+0x20 (kernel)
+        ffff80001008a4c0 _raw_spin_unlock_irqrestore+0x20 (kernel)
+
+systemd  1234 [002] 12345.678903:         1 cycles:ppp:
+        ffff80001008a4c0 _raw_spin_unlock_irqrestore+0x20 (kernel)
+        ffff80001008a4c0 _raw_spin_unlock_irqrestore+0x20 (kernel)
+        ffff80001008a4c0 _raw_spin_unlock_irqrestore+0x20 (kernel)
+
+Top functions:
+    45.23%  [kernel]  _raw_spin_unlock_irqrestore
+    12.34%  [kernel]  do_sys_open
+     8.90%  [kernel]  do_sys_read
+     5.67%  [kernel]  schedule
+     3.45%  [kernel]  do_sys_write
+
+Perf report summary:
+# Samples: 1K of event 'cycles:ppp'
+# Event count (approx.): 123456789
+#
+# Children      Self  Command  Shared Object      Symbol
+# ........  ........  .......  .............  ..........
+#
+    45.23%    45.23%  swapper  [kernel.kallsyms]  [k] _raw_spin_unlock_irqrestore
+    12.34%    12.34%  kworker  [kernel.kallsyms]  [k] do_sys_open
+     8.90%     8.90%  systemd  [kernel.kallsyms]  [k] do_sys_read
+     5.67%     5.67%  systemd  [kernel.kallsyms]  [k] schedule
+     3.45%     3.45%  kworker  [kernel.kallsyms]  [k] do_sys_write

@@ -1,0 +1,11 @@
+# View dmesg
+less traces/dmesg/current.log
+
+# View ftrace
+sudo trace-cmd report -i traces/ftrace/trace.dat
+
+# View perf
+perf report -i traces/perf/cpu.data
+
+# View strace
+less traces/strace/app.log

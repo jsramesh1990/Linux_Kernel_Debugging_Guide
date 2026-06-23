@@ -1,0 +1,223 @@
+# ============================================
+# Docker Compose for Rock 3 Build Environment
+# ============================================
+
+version: '3.8'
+
+services:
+  # Main build container
+  builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USERNAME: ${USERNAME:-builder}
+        USER_UID: ${UID:-1000}
+        USER_GID: ${GID:-1000}
+    container_name: rock3-builder
+    hostname: rock3-builder
+    restart: unless-stopped
+    
+    # User mapping
+    user: ${UID:-1000}:${GID:-1000}
+    
+    # Volume mounts
+    volumes:
+      # Source code
+      - ../src:/workspace/src:rw
+      # Build output
+      - ../output:/workspace/output:rw
+      # Trace data
+      - ../traces:/workspace/traces:rw
+      # Scripts
+      - ../scripts:/workspace/scripts:rw
+      # Configurations
+      - ../configs:/workspace/configs:rw
+      # Cache for ccache
+      - ccache-cache:/home/${USERNAME:-builder}/.ccache
+      # Docker socket (optional)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    
+    # Environment variables
+    environment:
+      - CROSS_COMPILE=aarch64-linux-gnu-
+      - ARCH=arm64
+      - USER=${USERNAME:-builder}
+      - HOME=/home/${USERNAME:-builder}
+      - CCACHE_DIR=/home/${USERNAME:-builder}/.ccache
+      - CCACHE_SIZE=2G
+      - DEBIAN_FRONTEND=noninteractive
+      - TERM=xterm-256color
+    
+    # Privileges for debugging
+    privileged: true
+    cap_add:
+      - SYS_ADMIN
+      - SYS_PTRACE
+      - SYS_TIME
+      - SYS_NICE
+      - SYS_RESOURCE
+      - SYSLOG
+      - DAC_READ_SEARCH
+      - NET_ADMIN
+      - NET_RAW
+      - IPC_LOCK
+      - IPC_OWNER
+    
+    # Devices
+    devices:
+      - /dev/fuse
+      - /dev/i2c-1:/dev/i2c-1:rw
+      - /dev/spidev0.0:/dev/spidev0.0:rw
+      - /dev/gpiochip0:/dev/gpiochip0:rw
+      - /dev/ttyS0:/dev/ttyS0:rw
+      - /dev/ttyS1:/dev/ttyS1:rw
+      - /dev/ttyS2:/dev/ttyS2:rw
+      - /dev/ttyS3:/dev/ttyS3:rw
+    
+    # Shared memory
+    shm_size: 2g
+    
+    # Network
+    networks:
+      - build-network
+    
+    # Keep container running
+    command: tail -f /dev/null
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '2'
+          memory: 2G
+
+  # Development container with additional tools
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        USERNAME: ${USERNAME:-builder}
+        USER_UID: ${UID:-1000}
+        USER_GID: ${GID:-1000}
+    container_name: rock3-dev
+    hostname: rock3-dev
+    restart: unless-stopped
+    
+    user: ${UID:-1000}:${GID:-1000}
+    
+    volumes:
+      - ../src:/workspace/src:rw
+      - ../output:/workspace/output:rw
+      - ../traces:/workspace/traces:rw
+      - ../scripts:/workspace/scripts:rw
+      - ../configs:/workspace/configs:rw
+      - ccache-cache:/home/${USERNAME:-builder}/.ccache
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    
+    environment:
+      - CROSS_COMPILE=aarch64-linux-gnu-
+      - ARCH=arm64
+      - USER=${USERNAME:-builder}
+      - HOME=/home/${USERNAME:-builder}
+      - CCACHE_DIR=/home/${USERNAME:-builder}/.ccache
+      - DEBIAN_FRONTEND=noninteractive
+      - TERM=xterm-256color
+    
+    privileged: true
+    cap_add:
+      - SYS_ADMIN
+      - SYS_PTRACE
+    shm_size: 2g
+    
+    networks:
+      - build-network
+    
+    # SSH port mapping for remote development
+    ports:
+      - "2222:22"
+      - "8080:8080"
+      - "9090:9090"
+    
+    # Keep container running
+    command: tail -f /dev/null
+
+  # QEMU for cross-architecture testing
+  qemu:
+    image: multiarch/qemu-user-static:latest
+    container_name: rock3-qemu
+    privileged: true
+    command: ["--reset", "--persistent", "yes"]
+    networks:
+      - build-network
+    restart: unless-stopped
+
+  # Monitoring container
+  monitor:
+    image: alpine:latest
+    container_name: rock3-monitor
+    pid: host
+    privileged: true
+    command: sh -c "apk add procps htop && htop"
+    networks:
+      - build-network
+    profiles:
+      - monitor
+    
+  # Database for trace storage (optional)
+  # traces-db:
+  #   image: timescale/timescaledb:latest-pg14
+  #   container_name: rock3-traces-db
+  #   environment:
+  #     - POSTGRES_USER=rock3
+  #     - POSTGRES_PASSWORD=rock3pass
+  #     - POSTGRES_DB=traces
+  #   volumes:
+  #     - traces-db-data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+  #   networks:
+  #     - build-network
+  #   profiles:
+  #     - db
+
+  # Grafana for visualization (optional)
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: rock3-grafana
+  #   ports:
+  #     - "3000:3000"
+  #   volumes:
+  #     - grafana-data:/var/lib/grafana
+  #     - ../grafana/dashboards:/etc/grafana/provisioning/dashboards
+  #   environment:
+  #     - GF_SECURITY_ADMIN_PASSWORD=rock3admin
+  #   networks:
+  #     - build-network
+  #   profiles:
+  #     - grafana
+
+# -------------------- Networks --------------------
+networks:
+  build-network:
+    driver: bridge
+    name: rock3-network
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# -------------------- Volumes --------------------
+volumes:
+  ccache-cache:
+    name: rock3-ccache
+    driver: local
+  # traces-db-data:
+  #   name: rock3-traces-db
+  #   driver: local
+  # grafana-data:
+  #   name: rock3-grafana-data
+  #   driver: local

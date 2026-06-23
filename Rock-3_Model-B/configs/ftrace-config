@@ -1,0 +1,130 @@
+# ============================================
+# Ftrace Configuration for Rock 3 Model B
+# ============================================
+
+# -------------------- Tracers --------------------
+# Available tracers: nop, function, function_graph, irqsoff, preemptoff, preemptirqsoff, wakeup, wakeup_rt, wakeup_dl, blk, mmiotrace, branch, stack
+FTRACE_DEFAULT_TRACER="function_graph"
+
+# Alternate tracers
+FTRACE_FUNCTION_TRACER="function"
+FTRACE_GRAPH_TRACER="function_graph"
+FTRACE_IRQSOFF_TRACER="irqsoff"
+FTRACE_PREEMPT_TRACER="preemptoff"
+FTRACE_SCHED_TRACER="wakeup"
+
+# -------------------- Buffer Size --------------------
+# Trace buffer size in KB (default: 4096)
+FTRACE_BUFFER_SIZE_KB=8192
+
+# Total buffer size for all CPUs
+FTRACE_BUFFER_TOTAL_KB=32768
+
+# -------------------- Enabled Events --------------------
+# Core kernel events
+FTRACE_EVENTS_CORE="sched_switch,sched_wakeup,sched_wakeup_new,sched_process_fork,sched_process_exec,sched_process_exit"
+
+# IRQ events
+FTRACE_EVENTS_IRQ="irq_handler_entry,irq_handler_exit,softirq_entry,softirq_exit,softirq_raise"
+
+# Timer events
+FTRACE_EVENTS_TIMER="timer_start,timer_expire_entry,timer_expire_exit,hrtimer_start,hrtimer_expire_entry,hrtimer_expire_exit"
+
+# Workqueue events
+FTRACE_EVENTS_WORKQUEUE="workqueue_queue_work,workqueue_execute_start,workqueue_execute_end"
+
+# Power events
+FTRACE_EVENTS_POWER="cpu_idle,cpu_frequency,cpu_capacity"
+
+# -------------------- Peripheral Events --------------------
+# I2C events
+FTRACE_EVENTS_I2C="i2c:i2c_write,i2c:i2c_read,i2c:i2c_result,i2c:i2c_reply"
+
+# SPI events
+FTRACE_EVENTS_SPI="spi:spi_transfer_start,spi:spi_transfer_stop"
+
+# GPIO events
+FTRACE_EVENTS_GPIO="gpio:gpio_direction,gpio:gpio_value,gpio:gpio_request"
+
+# USB events
+FTRACE_EVENTS_USB="usb:usb_submit_urb,usb:usb_complete_urb,usb:usb_urb_submit,usb:usb_urb_complete"
+
+# DRM events (HDMI/Display)
+FTRACE_EVENTS_DRM="drm:drm_vblank_event,drm:drm_atomic,drm:drm_sched_job"
+
+# NET events
+FTRACE_EVENTS_NET="net:net_dev_start_xmit,net:net_dev_xmit,net:netif_receive_skb"
+
+# -------------------- Function Filters --------------------
+# Kernel functions to trace
+FTRACE_FUNCTION_FILTER="do_sys_open,do_sys_close,do_sys_read,do_sys_write,do_sys_ioctl,kernel_read,kernel_write"
+
+# Functions to ignore
+FTRACE_FUNCTION_IGNORE="*lock*,*spin*,*mutex*,*wait*,*sleep*"
+
+# Function graph max depth
+FTRACE_GRAPH_DEPTH=5
+
+# -------------------- Trace Options --------------------
+# Show stack traces
+FTRACE_STACKTRACE=0
+
+# Show function graph in trace
+FTRACE_GRAPH_PRINT=1
+
+# Show irq context
+FTRACE_IRQ_INFO=1
+
+# -------------------- Trace-cmd Settings --------------------
+# Default trace-cmd options
+TRACE_CMD_RECORD_OPTS="-p function_graph"
+
+# Trace-cmd report options
+TRACE_CMD_REPORT_OPTS="--cpu --timestamp"
+
+# -------------------- Trace File Locations --------------------
+# Ftrace debugfs mount point
+FTRACE_DEBUGFS="/sys/kernel/debug/tracing"
+
+# Trace output directory
+FTRACE_OUTPUT_DIR="./traces/ftrace"
+
+# -------------------- Start Trace Script --------------------
+# Function to start ftrace with default settings
+start_ftrace() {
+    echo "Starting ftrace..."
+    echo $FTRACE_DEFAULT_TRACER > $FTRACE_DEBUGFS/current_tracer
+    echo $FTRACE_BUFFER_SIZE_KB > $FTRACE_DEBUGFS/buffer_size_kb
+    
+    # Enable events
+    for event in $FTRACE_EVENTS_CORE $FTRACE_EVENTS_IRQ $FTRACE_EVENTS_TIMER; do
+        echo 1 > $FTRACE_DEBUGFS/events/$event/enable
+    done
+    
+    echo 1 > $FTRACE_DEBUGFS/tracing_on
+    echo "Ftrace started"
+}
+
+# Function to stop ftrace
+stop_ftrace() {
+    echo 0 > $FTRACE_DEBUGFS/tracing_on
+    echo nop > $FTRACE_DEBUGFS/current_tracer
+    echo "Ftrace stopped"
+}
+
+# Function to clear trace buffer
+clear_trace() {
+    echo > $FTRACE_DEBUGFS/trace
+}
+
+# Function to view trace
+view_trace() {
+    cat $FTRACE_DEBUGFS/trace
+}
+
+# Function to save trace
+save_trace() {
+    mkdir -p $FTRACE_OUTPUT_DIR
+    cp $FTRACE_DEBUGFS/trace $FTRACE_OUTPUT_DIR/ftrace_$(date +%Y%m%d_%H%M%S).txt
+    echo "Trace saved to $FTRACE_OUTPUT_DIR"
+}

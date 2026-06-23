@@ -1,0 +1,81 @@
+Rock-3_Model-B/
+├── Makefile
+├── .gitignore
+├── README.md
+├── docs/
+│   ├── debugging-guide.md
+│   ├── perf-analysis.md
+│   ├── ftrace-guide.md
+│   └── peripheral-debug.md
+├── scripts/
+│   ├── build/
+│   │   ├── build-kernel.sh
+│   │   ├── build-module.sh
+│   │   ├── build-app.sh
+│   │   └── build-all.sh
+│   ├── debug/
+│   │   ├── enable-traces.sh
+│   │   ├── disable-traces.sh
+│   │   ├── collect-traces.sh
+│   │   ├── analyze-perf.sh
+│   │   └── trace-peripheral.sh
+│   └── monitor/
+│       ├── monitor-ddr.sh
+│       ├── monitor-cpu.sh
+│       └── monitor-io.sh
+├── src/
+│   ├── kernel/
+│   │   ├── .config
+│   │   └── Makefile
+│   ├── modules/
+│   │   ├── hello/
+│   │   │   ├── Makefile
+│   │   │   ├── hello.c
+│   │   │   └── hello.h
+│   │   └── gpio/
+│   │       ├── Makefile
+│   │       └── gpio-driver.c
+│   └── applications/
+│       ├── CMakeLists.txt
+│       └── src/
+│           ├── main.cpp
+│           ├── hardware.cpp
+│           └── hardware.h
+├── docker/
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   └── entrypoint.sh
+├── configs/
+│   ├── kernel-config
+│   ├── perf.config
+│   ├── ftrace.conf
+│   └── sysctl/
+│       └── 99-rock3-debug.conf
+├── output/
+│   ├── kernel/
+│   ├── modules/
+│   └── apps/
+├── traces/
+│   ├── perf/
+│   ├── ftrace/
+│   ├── strace/
+│   └── dmesg/
+├── test/
+│   └── integration/
+│       ├── test-performance.sh
+│       └── test-peripheral.sh
+├── tools/
+│   ├── trace-viewer/
+│   │   └── view-traces.py
+│   ├── analyze-perf/
+│   │   └── perf-analyzer.py
+│   └── monitor/
+│       └── system-dashboard.sh
+├── examples/
+│   ├── perf-examples.sh
+│   ├── ftrace-examples.sh
+│   └── strace-examples.sh
+└── .vscode/
+    ├── launch.json
+    ├── settings.json
+    └── tasks.json

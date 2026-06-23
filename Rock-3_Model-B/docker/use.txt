@@ -1,0 +1,36 @@
+# 1. Build and start the container
+cd docker
+docker-compose up -d
+
+# 2. Enter the container
+docker-compose exec builder bash
+
+# 3. Build kernel inside container
+docker-compose exec builder bash -c "cd /workspace/src/kernel && make rock3_defconfig && make -j\$(nproc) Image"
+
+# 4. Copy files out of container
+docker cp rock3-builder:/workspace/output/kernel/Image ./output/
+
+# 5. View logs
+docker-compose logs -f builder
+
+# 6. Stop container
+docker-compose down
+
+# 7. Stop and remove volumes
+docker-compose down -v
+
+# 8. Start with specific user
+UID=$(id -u) GID=$(id -g) docker-compose up -d
+
+# 9. SSH into container (if SSH service is running)
+ssh -p 2222 builder@localhost
+
+# 10. Run a command and exit
+docker-compose run --rm builder bash -c "ls -la /workspace"
+
+# 11. Start only specific service
+docker-compose up -d builder
+
+# 12. Start with profiles
+docker-compose --profile monitor up -d

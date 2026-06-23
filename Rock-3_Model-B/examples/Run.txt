@@ -1,0 +1,25 @@
+chmod +x examples/*.sh
+
+
+# Run individual examples
+./examples/ftrace-examples.sh
+./examples/perf-examples.sh
+./examples/strace-examples.sh
+
+# Or run all at once
+for example in examples/*.sh; do
+    echo "=== Running $example ==="
+    ./$example
+    echo ""
+    echo "Press Enter to continue..."
+    read
+done
+
+# Ftrace examples
+./examples/ftrace-examples.sh
+
+# Perf examples
+./examples/perf-examples.sh
+
+# Strace examples
+./examples/strace-examples.sh

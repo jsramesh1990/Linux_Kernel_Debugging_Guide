@@ -1,0 +1,24 @@
+# Build the Docker image
+cd docker
+docker-compose build
+
+# Start the container in background
+docker-compose up -d
+
+# Enter the container
+docker-compose exec builder bash
+
+# Build kernel inside container
+docker-compose exec builder bash -c "cd /workspace/src/kernel && make rock3_defconfig && make -j\$(nproc) Image"
+
+# Stop the container
+docker-compose down
+
+# Stop and remove volumes
+docker-compose down -v
+
+# View logs
+docker-compose logs -f builder
+
+# Run with specific user
+UID=$(id -u) GID=$(id -g) docker-compose up -d

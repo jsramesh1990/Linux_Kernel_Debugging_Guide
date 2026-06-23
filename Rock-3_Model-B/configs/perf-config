@@ -1,0 +1,72 @@
+# ============================================
+# Perf Tool Configuration for Rock 3 Model B
+# ============================================
+
+# -------------------- DDR PMU Events (RK3568 Specific) --------------------
+# DDR Performance Monitoring Unit events
+PERF_DDR_EVENTS="rockchip_ddr/cycles/,rockchip_ddr/bytes/,rockchip_ddr/read-bytes/,rockchip_ddr/write-bytes/,rockchip_ddr/read-ops/,rockchip_ddr/write-ops/,rockchip_ddr/all-ops/"
+
+# DDR bandwidth monitoring (in MB)
+PERF_DDR_BANDWIDTH="rockchip_ddr/bytes/"
+
+# DDR read/write operations
+PERF_DDR_OPS="rockchip_ddr/read-ops/,rockchip_ddr/write-ops/"
+
+# -------------------- CPU Events --------------------
+PERF_CPU_EVENTS="cycles,instructions,cache-misses,cache-references,L1-dcache-load-misses,L1-dcache-loads,LLC-load-misses,LLC-loads,branch-misses,branch-loads,context-switches,page-faults"
+
+# Branch prediction events
+PERF_BRANCH_EVENTS="branch-misses,branch-loads,branch-instructions"
+
+# Cache events
+PERF_CACHE_EVENTS="L1-dcache-load-misses,L1-dcache-loads,L1-icache-load-misses,L1-icache-loads,LLC-load-misses,LLC-loads,LLC-store-misses,LLC-stores"
+
+# -------------------- Perf Options --------------------
+# Default perf record options
+PERF_RECORD_OPTS="-a -g -F 99"
+
+# Default perf stat options
+PERF_STAT_OPTS="-a -r 5"
+
+# Default perf report options
+PERF_REPORT_OPTS="--stdio --sort comm,dso,symbol --no-children"
+
+# -------------------- Perf Scripts --------------------
+# DDR monitoring script
+MONITOR_DDR_SCRIPT='perf stat -a -e rockchip_ddr/bytes/ sleep 1'
+
+# CPU monitoring script
+MONITOR_CPU_SCRIPT='perf stat -a -e cycles,instructions,cache-misses sleep 1'
+
+# Full system profiling
+PROFILE_SYSTEM_SCRIPT='perf record -a -g -F 99 sleep 30 && perf report --stdio'
+
+# Process profiling
+PROCESS_PROFILE_SCRIPT='perf record -p $(pgrep process_name) -g sleep 10'
+
+# -------------------- Perf Visualization --------------------
+# Generate flame graph
+FLAME_GRAPH_SCRIPT='perf script | stackcollapse-perf.pl | flamegraph.pl > flamegraph.svg'
+
+# Generate call graph
+CALL_GRAPH_SCRIPT='perf report -g graph --stdio'
+
+# -------------------- Perf Configuration File --------------------
+# Perf config file location: ~/.perfconfig
+
+cat > ~/.perfconfig << 'EOF'
+[report]
+    sort-order = comm,dso,symbol
+    call-graph = callee
+    percent-limit = 0.5
+
+[tui]
+    report-sort = comm,dso,symbol
+
+[annotate]
+    show-nr-samples = true
+    show-total-period = true
+
+[ui]
+    report-sort = comm,dso,symbol
+EOF

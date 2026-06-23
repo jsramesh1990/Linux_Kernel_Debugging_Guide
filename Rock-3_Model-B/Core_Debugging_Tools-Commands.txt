@@ -1,0 +1,390 @@
+1. perf - Performance Monitoring
+
+The Rock 3's RK3568 has direct DDR PMU support for perf.
+Basic Commands Structure:
+bash
+
+# List available events
+perf list
+
+# System-wide DDR monitoring (Rock 3 specific)
+perf stat -a -e rockchip_ddr/cycles/,\
+    rockchip_ddr/read-bytes/,\
+    rockchip_ddr/write-bytes/,\
+    rockchip_ddr/bytes/ sleep 1
+
+# Profile CPU usage
+perf record -a -g sleep 30
+perf report
+
+# Trace specific application
+perf record -p $(pgrep your_app) sleep 10
+perf report --stdio
+
+2. Ftrace / trace-cmd - Kernel Tracing
+
+ftrace is the kernel's built-in tracer, and trace-cmd is its command-line front-end.
+bash
+
+# Install trace-cmd
+sudo apt install trace-cmd kernelshark
+
+# Record kernel events
+sudo trace-cmd record -p function_graph -e sched_switch sleep 10
+
+# Generate trace.dat file
+sudo trace-cmd extract
+
+# View trace
+sudo trace-cmd report -i trace.dat
+
+# Use KernelShark GUI
+kernelshark trace.dat
+
+3. strace - System Call Tracing
+bash
+
+# Trace all system calls
+strace -f -o strace.log your_program
+
+# Filter specific system calls
+strace -e open,read,write your_program
+
+# Trace with timestamps
+strace -r -tt -T your_program
+
+4. dmesg - Kernel Ring Buffer
+bash
+
+# View kernel messages
+dmesg
+
+# Filter with levels
+dmesg -H -L -T -l crit,err
+
+# Follow kernel messages
+dmesg -w
+
+# Search for specific peripherals
+dmesg | grep -i hdmi
+dmesg | grep -i ethernet
+
+
+
+
+========================================================================
+                CORE DEBUGGING TOOLS & COMMANDS
+                Rock 3 Model B - RK3568
+========================================================================
+
+1. PERF - Performance Monitoring
+========================================================================
+
+DDR Monitoring (RK3568 Specific)
+--------------------------------
+perf stat -a -e rockchip_ddr/cycles/ sleep 1
+perf stat -a -e rockchip_ddr/read-bytes/ sleep 1
+perf stat -a -e rockchip_ddr/write-bytes/ sleep 1
+perf stat -a -e rockchip_ddr/bytes/ sleep 1
+perf stat -a -e rockchip_ddr/read-ops/ sleep 1
+perf stat -a -e rockchip_ddr/write-ops/ sleep 1
+perf stat -a -e rockchip_ddr/all-ops/ sleep 1
+
+CPU Performance
+---------------
+perf stat -e cycles,instructions,cache-misses sleep 1
+perf record -a -g -F 99 sleep 30
+perf report --stdio
+perf annotate -d symbol_name
+perf top
+
+Process Profiling
+-----------------
+perf record -p $(pgrep process_name) -g sleep 10
+perf stat -p $(pgrep process_name) sleep 5
+perf report -i perf.data
+
+Cache Analysis
+--------------
+perf stat -e L1-dcache-loads,L1-dcache-load-misses sleep 1
+perf stat -e LLC-loads,LLC-load-misses sleep 1
+perf stat -e cache-references,cache-misses sleep 1
+
+Scheduler Analysis
+------------------
+perf stat -e context-switches,migrations,page-faults sleep 1
+perf sched record -- sleep 10
+perf sched latency --sort max
+
+========================================================================
+
+2. FTRACE - Kernel Tracing
+========================================================================
+
+Basic Ftrace Commands
+---------------------
+echo function > /sys/kernel/debug/tracing/current_tracer
+echo function_graph > /sys/kernel/debug/tracing/current_tracer
+echo 1 > /sys/kernel/debug/tracing/tracing_on
+echo 0 > /sys/kernel/debug/tracing/tracing_on
+cat /sys/kernel/debug/tracing/trace
+echo > /sys/kernel/debug/tracing/trace
+
+Function Graph
+--------------
+echo function_graph > /sys/kernel/debug/tracing/current_tracer
+echo 5 > /sys/kernel/debug/tracing/max_graph_depth
+echo 1 > /sys/kernel/debug/tracing/tracing_on
+cat /sys/kernel/debug/tracing/trace
+
+Event Tracing
+-------------
+echo 1 > /sys/kernel/debug/tracing/events/sched/sched_switch/enable
+echo 1 > /sys/kernel/debug/tracing/events/irq/irq_handler_entry/enable
+echo 1 > /sys/kernel/debug/tracing/events/i2c/*/enable
+echo 1 > /sys/kernel/debug/tracing/events/gpio/*/enable
+echo 1 > /sys/kernel/debug/tracing/events/usb/*/enable
+echo 1 > /sys/kernel/debug/tracing/events/spi/*/enable
+
+Function Filtering
+------------------
+echo do_sys_open > /sys/kernel/debug/tracing/set_ftrace_filter
+echo 'do_sys_*' > /sys/kernel/debug/tracing/set_ftrace_filter
+echo do_sys_open > /sys/kernel/debug/tracing/set_ftrace_notrace
+
+trace-cmd Commands
+------------------
+sudo trace-cmd record -p function_graph sleep 10
+sudo trace-cmd record -e sched_switch -e irq_handler_entry sleep 10
+sudo trace-cmd record --module drm sleep 5
+sudo trace-cmd extract -o trace.dat
+sudo trace-cmd report -i trace.dat
+sudo trace-cmd report -i trace.dat -e sched_switch
+kernelshark trace.dat
+
+Stack Trace
+-----------
+echo 1 > /sys/kernel/debug/tracing/options/stacktrace
+
+========================================================================
+
+3. STRACE - System Call Tracing
+========================================================================
+
+Basic Strace Commands
+---------------------
+strace -f -o strace.log ./your_app
+strace -e open,read,write,ioctl ./your_app
+strace -r -tt -T ./your_app
+strace -p $(pgrep your_app)
+
+Filtered Tracing
+----------------
+strace -e trace=file ./your_app
+strace -e trace=network ./your_app
+strace -e trace=process ./your_app
+strace -e trace=memory ./your_app
+strace -e trace=signal ./your_app
+
+Summary Statistics
+------------------
+strace -c ./your_app
+strace -c -f ./your_app
+
+Output Options
+--------------
+strace -v ./your_app  # Verbose
+strace -y ./your_app  # Show file descriptors
+strace -f ./your_app  # Follow children
+strace -tt ./your_app # Microsecond timestamps
+
+========================================================================
+
+4. DMESG - Kernel Ring Buffer
+========================================================================
+
+Basic Commands
+--------------
+dmesg
+dmesg -H -L -T
+dmesg -w
+dmesg -l err,crit,alert
+dmesg -f kern
+
+Filtering
+---------
+dmesg | grep -i hdmi
+dmesg | grep -i ethernet
+dmesg | grep -i usb
+dmesg | grep -i i2c
+dmesg | grep -i spi
+dmesg | grep -i gpio
+dmesg | grep -i error
+
+========================================================================
+
+5. PERIPHERAL DEBUGGING
+========================================================================
+
+I2C Debugging
+-------------
+i2cdetect -l
+i2cdetect -y 1
+i2cget -y 1 0x50 0x00
+i2cset -y 1 0x50 0x00 0xFF
+i2cdump -y 1 0x50
+i2ctransfer -y 1 w1@0x50 0x00 r8
+
+SPI Debugging
+-------------
+ls /dev/spi*
+spidev_test -D /dev/spidev0.0 -v
+spidev_test -D /dev/spidev0.0 -s 1000000 -p "\x01\x02\x03"
+
+GPIO Debugging
+--------------
+echo 17 > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio17/direction
+echo 1 > /sys/class/gpio/gpio17/value
+cat /sys/class/gpio/gpio17/value
+echo 17 > /sys/class/gpio/unexport
+
+HDMI Debugging
+--------------
+cat /sys/class/drm/card0-HDMI-A-1/status
+cat /sys/class/drm/card0-HDMI-A-1/edid > edid.bin
+edid-decode edid.bin
+
+Ethernet Debugging
+------------------
+ip link show eth0
+ethtool eth0
+ethtool -S eth0
+tcpdump -i eth0 -c 10
+
+USB Debugging
+-------------
+lsusb
+lsusb -t
+lsusb -v
+
+PWM Debugging
+-------------
+echo 0 > /sys/class/pwm/pwmchip0/export
+echo 1000000 > /sys/class/pwm/pwm0/period
+echo 500000 > /sys/class/pwm/pwm0/duty_cycle
+echo 1 > /sys/class/pwm/pwm0/enable
+
+Temperature
+-----------
+cat /sys/class/thermal/thermal_zone0/temp
+watch -n 1 'cat /sys/class/thermal/thermal_zone*/temp'
+
+========================================================================
+
+6. ADVANCED DEBUGGING
+========================================================================
+
+SystemTap
+---------
+sudo apt install systemtap systemtap-runtime
+sudo stap -e 'probe kernel.function("do_sys_open") { printf("open: %s\n", argstr) }'
+
+eBPF/BCC Tools
+--------------
+sudo apt install bpfcc-tools
+sudo biotop-bpfcc
+sudo biosnoop-bpfcc
+sudo tcpconnect-bpfcc
+sudo opensnoop-bpfcc
+sudo trace-bpfcc "do_sys_open"
+
+Kernel Dynamic Debug
+--------------------
+echo 'file drivers/i2c/* +p' > /sys/kernel/debug/dynamic_debug/control
+echo 'file drivers/spi/* +p' > /sys/kernel/debug/dynamic_debug/control
+echo 'file drivers/gpio/* +p' > /sys/kernel/debug/dynamic_debug/control
+
+========================================================================
+
+7. MEMORY ANALYSIS
+========================================================================
+
+Memory Usage
+------------
+free -h
+cat /proc/meminfo
+cat /proc/slabinfo
+vmstat 1 5
+
+Process Memory
+--------------
+ps aux --sort=-%mem
+pmap -x $$
+
+Memory Debugging
+----------------
+valgrind --leak-check=full ./your_app
+valgrind --tool=massif ./your_app
+ms_print massif.out.*
+
+========================================================================
+
+8. NETWORK DEBUGGING
+========================================================================
+
+Network Statistics
+------------------
+netstat -i
+netstat -s
+ss -tuln
+ip -s link
+
+Network Capture
+---------------
+tcpdump -i eth0 -c 10
+tcpdump -i eth0 port 80
+tcpdump -i eth0 -w capture.pcap
+tcpdump -r capture.pcap
+
+========================================================================
+
+9. QUICK REFERENCE CARD
+========================================================================
+
+PERF:
+-----
+perf record -a -g -F 99 sleep 30          # Record system-wide
+perf report --stdio                       # Report
+perf stat -a -e rockchip_ddr/bytes/ sleep 1 # DDR bandwidth
+perf top                                  # Live monitoring
+
+FTRACE:
+-------
+echo function > /sys/kernel/debug/tracing/current_tracer
+echo 1 > /sys/kernel/debug/tracing/tracing_on
+cat /sys/kernel/debug/tracing/trace
+
+TRACE-CMD:
+----------
+sudo trace-cmd record -p function_graph sleep 10
+sudo trace-cmd report -i trace.dat
+kernelshark trace.dat
+
+STRACE:
+-------
+strace -f -o log ./app
+strace -e open,read,write ./app
+strace -p PID
+
+DMESG:
+------
+dmesg -H -L -T
+dmesg -w
+dmesg | grep -i error
+
+========================================================================
+END OF FILE
+========================================================================
+
+

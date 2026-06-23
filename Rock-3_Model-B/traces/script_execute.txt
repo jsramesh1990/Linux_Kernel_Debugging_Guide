@@ -1,0 +1,7 @@
+chmod +x traces/collect-all.sh
+
+
+./traces/collect-all.sh
+
+
+
