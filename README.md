@@ -1,0 +1,1057 @@
+# Rock 3 Model B - Complete Development & Debugging Platform
+
+##  Table of Contents
+1. [Project Overview](#project-overview)
+2. [Block Diagram](#block-diagram)
+3. [Trace Flow Architecture](#trace-flow-architecture)
+4. [Directory Structure](#directory-structure)
+5. [Hardware Specifications](#hardware-specifications)
+6. [Prerequisites](#prerequisites)
+7. [Quick Start Guide](#quick-start-guide)
+8. [Build Flow](#build-flow)
+9. [Debugging Tools & Commands](#debugging-tools--commands)
+10. [Application Implementation](#application-implementation)
+11. [Peripheral Verification](#peripheral-verification)
+12. [Docker Environment](#docker-environment)
+13. [Testing Framework](#testing-framework)
+14. [Trace Collection](#trace-collection)
+15. [How to Obtain in Console](#how-to-obtain-in-console)
+16. [Troubleshooting](#troubleshooting)
+17. [Contributing](#contributing)
+18. [License](#license)
+
+---
+
+##  Project Overview
+
+This repository provides a **complete development and debugging platform** for the **Radxa Rock 3 Model B** single-board computer based on the **RK3568** processor.
+
+### Key Features
+- ✅ **Cross-compilation environment** for ARM64
+- ✅ **Full kernel build system** with Rock 3 patches
+- ✅ **Comprehensive debugging tools** (perf, ftrace, strace, dmesg)
+- ✅ **DDR Performance Monitoring** (RK3568 PMU support)
+- ✅ **Peripheral verification suite** (I2C, SPI, GPIO, HDMI, USB)
+- ✅ **Docker-based reproducible builds**
+- ✅ **Automated testing framework**
+- ✅ **Trace collection and analysis tools**
+
+### Project Flow
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     ROCK 3 MODEL B PLATFORM                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│   [Development]  →  [Build]  →  [Deploy]  →  [Debug]  →  [Verify]  │
+│                                                                     │
+│   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐       │
+│   │  Docker  │   │  Kernel  │   │   Rock   │   │   perf   │       │
+│   │  Image   │ → │  Build   │ → │    3     │ → │  ftrace  │       │
+│   │          │   │          │   │  Board   │   │  strace  │       │
+│   └──────────┘   └──────────┘   └──────────┘   └──────────┘       │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+##  Block Diagram
+
+### System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           ROCK 3 MODEL B SYSTEM ARCHITECTURE                     │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                   │
+│  ┌──────────────────────────────────────────────────────────────────────────┐   │
+│  │                         APPLICATION LAYER                                 │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │   │
+│  │  │  rock3-app   │  │   System     │  │   Monitor    │  │   Test       │  │   │
+│  │  │  (C++)       │  │   Services   │  │   Dashboard  │  │   Suite      │  │   │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │   │
+│  └──────────────────────────────────────────────────────────────────────────┘   │
+│                                      │                                           │
+│                                      ▼                                           │
+│  ┌──────────────────────────────────────────────────────────────────────────┐   │
+│  │                          DEBUGGING TOOLS                                 │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │   │
+│  │  │    perf      │  │   ftrace     │  │   strace     │  │   dmesg      │  │   │
+│  │  │  (PMU/DDR)   │  │   (Kernel)   │  │ (Syscalls)   │  │  (Ring buf)  │  │   │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │   │
+│  └──────────────────────────────────────────────────────────────────────────┘   │
+│                                      │                                           │
+│                                      ▼                                           │
+│  ┌──────────────────────────────────────────────────────────────────────────┐   │
+│  │                          KERNEL LAYER                                    │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │   │
+│  │  │  Scheduler   │  │   Memory     │  │   File       │  │   Network    │  │   │
+│  │  │  Management  │  │  Management  │  │   System     │  │    Stack     │  │   │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │   │
+│  └──────────────────────────────────────────────────────────────────────────┘   │
+│                                      │                                           │
+│                                      ▼                                           │
+│  ┌──────────────────────────────────────────────────────────────────────────┐   │
+│  │                         DRIVER LAYER                                     │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │   │
+│  │  │  I2C Driver  │  │  SPI Driver  │  │  GPIO Driver │  │  USB Driver  │  │   │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │   │
+│  │  │  HDMI/DRM    │  │  Ethernet    │  │  PWM Driver  │  │  Thermal     │  │   │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │   │
+│  └──────────────────────────────────────────────────────────────────────────┘   │
+│                                      │                                           │
+│                                      ▼                                           │
+│  ┌──────────────────────────────────────────────────────────────────────────┐   │
+│  │                        HARDWARE LAYER                                    │   │
+│  │  ┌────────────────────────────────────────────────────────────────────┐  │   │
+│  │  │                    RK3568 SoC (Quad-core ARM Cortex-A55)          │  │   │
+│  │  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐           │  │   │
+│  │  │  │  CPU0    │ │  CPU1    │ │  CPU2    │ │  CPU3    │           │  │   │
+│  │  │  │ Cortex-A55│ │ Cortex-A55│ │ Cortex-A55│ │ Cortex-A55│           │  │   │
+│  │  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘           │  │   │
+│  │  │  ┌────────────────────────────────────────────────────────────────┐  │   │
+│  │  │  │                    DDR PMU (Performance Monitoring)           │  │   │
+│  │  │  └────────────────────────────────────────────────────────────────┘  │   │
+│  │  └────────────────────────────────────────────────────────────────────┘  │   │
+│  │                                                                          │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │   │
+│  │  │  I2C Buses   │  │  SPI Buses   │  │  GPIO Pins   │  │  HDMI Output │  │   │
+│  │  │  (x5)        │  │  (x2)        │  │  (x28)       │  │  4K Support  │  │   │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │   │
+│  │  │  Ethernet    │  │  USB 3.0     │  │  USB 2.0     │  │  PWM Channels│  │   │
+│  │  │  (Gigabit)   │  │  (x1)        │  │  (x2)        │  │  (x4)        │  │   │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │   │
+│  └──────────────────────────────────────────────────────────────────────────┘   │
+│                                                                                   │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Build Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              BUILD FLOW                                          │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                   │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                   1. SOURCE CODE ACQUISITION                             │    │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                   │    │
+│  │  │  Kernel      │  │  Modules     │  │  Application │                   │    │
+│  │  │  (Linux)     │  │  (Custom)    │  │  (C++)       │                   │    │
+│  │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘                   │    │
+│  └─────────┼─────────────────┼─────────────────┼───────────────────────────┘    │
+│            │                 │                 │                                  │
+│            ▼                 ▼                 ▼                                  │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                   2. DOCKER ENVIRONMENT SETUP                            │    │
+│  │  ┌────────────────────────────────────────────────────────────────────┐  │    │
+│  │  │  docker build -t rock3-builder .                                  │  │    │
+│  │  │  docker-compose up -d                                             │  │    │
+│  │  └────────────────────────────────────────────────────────────────────┘  │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│            │                                                                     │
+│            ▼                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                   3. CROSS-COMPILATION                                   │    │
+│  │  ┌────────────────────────────────────────────────────────────────────┐  │    │
+│  │  │  aarch64-linux-gnu-gcc - Kernel, Modules, Application             │  │    │
+│  │  └────────────────────────────────────────────────────────────────────┘  │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│            │                                                                     │
+│            ▼                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                   4. BUILD OUTPUT                                        │    │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                   │    │
+│  │  │  Image       │  │  *.ko        │  │  rock3-app   │                   │    │
+│  │  │  (Kernel)    │  │  (Modules)   │  │  (App)       │                   │    │
+│  │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘                   │    │
+│  └─────────┼─────────────────┼─────────────────┼───────────────────────────┘    │
+│            │                 │                 │                                  │
+│            ▼                 ▼                 ▼                                  │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                   5. DEPLOYMENT                                         │    │
+│  │  ┌────────────────────────────────────────────────────────────────────┐  │    │
+│  │  │  Copy to Rock 3 → Boot Kernel → Load Modules → Run Application    │  │    │
+│  │  └────────────────────────────────────────────────────────────────────┘  │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│                                                                                   │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+##  Trace Flow Architecture
+
+### Complete Trace Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                              TRACE FLOW ARCHITECTURE                             │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                   │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                   1. TRACE INITIATION                                    │    │
+│  │                                                                          │    │
+│  │  ┌──────────────────────────────────────────────────────────────────┐   │    │
+│  │  │  User Command: trace-cmd record -p function_graph sleep 10     │   │    │
+│  │  │  User Command: perf record -a -g -F 99 sleep 30               │   │    │
+│  │  │  User Command: strace -f -o log ./app                         │   │    │
+│  │  └──────────────────────────────────────────────────────────────────┘   │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│            │                                                                     │
+│            ▼                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                   2. TRACE COLLECTION                                    │    │
+│  │                                                                          │    │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                   │    │
+│  │  │   PERF       │  │   FTRACE     │  │   STRACE     │                   │    │
+│  │  │  (PMU Data)  │  │ (Kernel Func)│  │ (Syscalls)   │                   │    │
+│  │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘                   │    │
+│  └─────────┼─────────────────┼─────────────────┼───────────────────────────┘    │
+│            │                 │                 │                                  │
+│            ▼                 ▼                 ▼                                  │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                   3. DATA STORAGE                                       │    │
+│  │                                                                          │    │
+│  │  ┌──────────────────────────────────────────────────────────────────┐   │    │
+│  │  │  traces/                                                         │   │    │
+│  │  │  ├── perf/cpu.data      # Binary perf data                      │   │    │
+│  │  │  ├── ftrace/trace.dat   # Binary ftrace data                    │   │    │
+│  │  │  ├── strace/app.log     # Text strace output                    │   │    │
+│  │  │  └── dmesg/current.log  # Kernel ring buffer                    │   │    │
+│  │  └──────────────────────────────────────────────────────────────────┘   │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│            │                                                                     │
+│            ▼                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                   4. DATA ANALYSIS                                      │    │
+│  │                                                                          │    │
+│  │  ┌──────────────────────────────────────────────────────────────────┐   │    │
+│  │  │  perf report -i perf.data                                        │   │    │
+│  │  │  trace-cmd report -i trace.dat                                  │   │    │
+│  │  │  cat strace.log | grep "open"                                   │   │    │
+│  │  │  kernelshark trace.dat                                          │   │    │
+│  │  └──────────────────────────────────────────────────────────────────┘   │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│            │                                                                     │
+│            ▼                                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                   5. VISUALIZATION & REPORTING                          │    │
+│  │                                                                          │    │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                   │    │
+│  │  │  Flame Graph │  │  KernelShark │  │  Report      │                   │    │
+│  │  │  (HTML)      │  │  (GUI)       │  │  (Text)      │                   │    │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘                   │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│                                                                                   │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Debugging Tool Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                        DEBUGGING TOOL FLOW                                       │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                   │
+│  ┌─────────────────────┐                                                        │
+│  │   Application       │                                                        │
+│  │   Running on Rock 3 │                                                        │
+│  └──────────┬──────────┘                                                        │
+│             │                                                                    │
+│             ▼                                                                    │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                      SYSTEM CALLS                                        │    │
+│  │  ┌──────────────────────────────────────────────────────────────────┐   │    │
+│  │  │  open()  read()  write()  ioctl()  mmap()  socket()  fork()    │   │    │
+│  │  └──────────────────────────────────────────────────────────────────┘   │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│             │                                                                    │
+│             ▼                                                                    │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                      STRACE CAPTURE                                      │    │
+│  │  ┌──────────────────────────────────────────────────────────────────┐   │    │
+│  │  │  strace -f -o log ./app        → Captures all system calls     │   │    │
+│  │  │  strace -e open,read ./app     → Filters specific calls        │   │    │
+│  │  │  strace -c ./app               → Summary statistics             │   │    │
+│  │  └──────────────────────────────────────────────────────────────────┘   │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│             │                                                                    │
+│             ▼                                                                    │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                      KERNEL FUNCTIONS                                    │    │
+│  │  ┌──────────────────────────────────────────────────────────────────┐   │    │
+│  │  │  do_sys_open()  do_sys_read()  do_sys_write()  schedule()      │   │    │
+│  │  └──────────────────────────────────────────────────────────────────┘   │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│             │                                                                    │
+│             ▼                                                                    │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                      FTRACE CAPTURE                                      │    │
+│  │  ┌──────────────────────────────────────────────────────────────────┐   │    │
+│  │  │  trace-cmd record -p function_graph sleep 10                    │   │    │
+│  │  │  echo function > /sys/kernel/debug/tracing/current_tracer      │   │    │
+│  │  │  echo 1 > /sys/kernel/debug/tracing/events/sched/*/enable     │   │    │
+│  │  └──────────────────────────────────────────────────────────────────┘   │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│             │                                                                    │
+│             ▼                                                                    │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                      HARDWARE EVENTS                                     │    │
+│  │  ┌──────────────────────────────────────────────────────────────────┐   │    │
+│  │  │  DDR PMU  CPU Cycles  Cache Misses  IRQ  Context Switches      │   │    │
+│  │  └──────────────────────────────────────────────────────────────────┘   │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│             │                                                                    │
+│             ▼                                                                    │
+│  ┌─────────────────────────────────────────────────────────────────────────┐    │
+│  │                      PERF CAPTURE                                       │    │
+│  │  ┌──────────────────────────────────────────────────────────────────┐   │    │
+│  │  │  perf record -a -g -F 99 sleep 30                              │   │    │
+│  │  │  perf stat -a -e rockchip_ddr/bytes/ sleep 1                  │   │    │
+│  │  │  perf report --stdio                                           │   │    │
+│  │  └──────────────────────────────────────────────────────────────────┘   │    │
+│  └─────────────────────────────────────────────────────────────────────────┘    │
+│                                                                                   │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+---
+
+##  Hardware Specifications
+
+### Rock 3 Model B
+
+| Component | Specification |
+|-----------|---------------|
+| **Processor** | RK3568 Quad-core ARM Cortex-A55 @ 2.0 GHz |
+| **RAM** | 2GB / 4GB / 8GB LPDDR4 |
+| **Storage** | microSD, eMMC module, NVMe SSD |
+| **Networking** | Gigabit Ethernet, Wi-Fi (optional), Bluetooth |
+| **USB** | USB 3.0 (x1), USB 2.0 (x2) |
+| **Video** | HDMI output with 4K support |
+| **I/O** | 40-pin GPIO header, I2C, SPI, UART, PWM |
+| **Power** | 5V DC via USB-C or 5V/3A DC |
+
+---
+
+##  Prerequisites
+
+### Host Machine Requirements
+```bash
+# Ubuntu 22.04 LTS (Recommended)
+# Docker 20.10+
+# CMake 3.10+
+# Git 2.0+
+
+# Install dependencies
+sudo apt update
+sudo apt install -y \
+    build-essential \
+    cmake \
+    git \
+    wget \
+    curl \
+    docker.io \
+    docker-compose \
+    gcc-aarch64-linux-gnu \
+    g++-aarch64-linux-gnu \
+    binutils-aarch64-linux-gnu \
+    libncurses-dev \
+    flex \
+    bison \
+    bc \
+    cpio \
+    rsync \
+    file \
+    libssl-dev \
+    device-tree-compiler
+```
+
+### Rock 3 Board Requirements
+```bash
+# On the Rock 3 board
+sudo apt update
+sudo apt install -y \
+    linux-tools-common \
+    linux-tools-generic \
+    trace-cmd \
+    kernelshark \
+    strace \
+    i2c-tools \
+    spidev-tools \
+    ethtool \
+    tcpdump \
+    perf \
+    git \
+    cmake \
+    build-essential
+```
+
+---
+
+##  Quick Start Guide
+
+### 1. Clone the Repository
+```bash
+git clone <repository-url>
+cd Rock-3_Model-B
+```
+
+### 2. Build Everything
+```bash
+# Using Make
+make build
+
+# Or using individual scripts
+./scripts/build/build-all.sh
+```
+
+### 3. Run Tests
+```bash
+# Run all tests
+make test
+
+# Run specific tests
+make test-system
+make test-performance
+make test-peripheral
+```
+
+### 4. Start Docker Environment
+```bash
+# Build Docker image
+make docker-build
+
+# Start container
+make docker-up
+
+# Enter container
+make docker-shell
+```
+
+### 5. Collect Debug Traces
+```bash
+# Collect all traces
+make traces-collect
+
+# Or manually
+./traces/collect-all.sh
+```
+
+---
+
+##  Build Flow
+
+### Step-by-Step Build Process
+
+```bash
+# 1. Build Kernel
+cd src/kernel
+make rock3_defconfig
+make -j$(nproc) Image dtbs modules
+
+# 2. Build Custom Modules
+cd src/modules/hello
+make
+cd ../gpio
+make
+
+# 3. Build Application
+cd src/applications
+mkdir -p build && cd build
+cmake ..
+make -j$(nproc)
+
+# 4. Copy Outputs
+cp src/kernel/arch/arm64/boot/Image output/kernel/
+cp src/kernel/arch/arm64/boot/dts/rockchip/*.dtb output/kernel/dtbs/rockchip/
+cp src/applications/build/rock3-app output/apps/
+```
+
+### Using Docker Build
+```bash
+# Enter Docker container
+docker-compose exec builder bash
+
+# Inside container
+cd /workspace
+./scripts/build/build-all.sh
+
+# Outputs will be in /workspace/output/
+```
+
+---
+
+##  Debugging Tools & Commands
+
+### Perf - Performance Monitoring
+
+#### DDR Monitoring (RK3568 Specific)
+```bash
+# DDR bandwidth
+perf stat -a -e rockchip_ddr/bytes/ sleep 1
+
+# DDR read/write bytes
+perf stat -a -e rockchip_ddr/read-bytes/,rockchip_ddr/write-bytes/ sleep 1
+
+# DDR cycles and ops
+perf stat -a -e rockchip_ddr/cycles/,rockchip_ddr/all-ops/ sleep 1
+
+# Continuous monitoring
+watch -n 1 'perf stat -a -e rockchip_ddr/bytes/ sleep 1 2>&1 | grep rockchip_ddr'
+```
+
+#### CPU Profiling
+```bash
+# Record CPU events
+perf record -a -g -F 99 sleep 30
+
+# Analyze
+perf report --stdio
+
+# CPU statistics
+perf stat -e cycles,instructions,cache-misses sleep 1
+
+# Annotate function
+perf annotate -d function_name
+```
+
+### Ftrace - Kernel Tracing
+
+#### Basic Ftrace
+```bash
+# Enable function tracer
+echo function > /sys/kernel/debug/tracing/current_tracer
+echo 1 > /sys/kernel/debug/tracing/tracing_on
+cat /sys/kernel/debug/tracing/trace
+echo 0 > /sys/kernel/debug/tracing/tracing_on
+
+# Function graph tracer
+echo function_graph > /sys/kernel/debug/tracing/current_tracer
+echo 5 > /sys/kernel/debug/tracing/max_graph_depth
+echo 1 > /sys/kernel/debug/tracing/tracing_on
+```
+
+#### trace-cmd
+```bash
+# Record function graph
+sudo trace-cmd record -p function_graph sleep 10
+
+# Record events
+sudo trace-cmd record -e sched_switch -e irq_handler_entry sleep 10
+
+# View trace
+sudo trace-cmd report -i trace.dat
+
+# GUI visualization
+kernelshark trace.dat
+```
+
+### Strace - System Call Tracing
+
+```bash
+# Basic tracing
+strace -f -o strace.log ./your_app
+
+# Filter system calls
+strace -e open,read,write,ioctl ./your_app
+
+# With timestamps
+strace -r -tt -T ./your_app
+
+# Summary statistics
+strace -c ./your_app
+
+# Attach to running process
+strace -p $(pgrep your_app)
+```
+
+### Dmesg - Kernel Ring Buffer
+
+```bash
+# View all messages
+dmesg
+
+# Human-readable with timestamps
+dmesg -H -L -T
+
+# Follow new messages
+dmesg -w
+
+# Filter by level
+dmesg -l err,crit,alert
+
+# Search for peripherals
+dmesg | grep -i hdmi
+dmesg | grep -i ethernet
+dmesg | grep -i usb
+```
+
+---
+
+##  Application Implementation
+
+### Rock3 Application (C++)
+
+```cpp
+// src/applications/src/main.cpp
+#include "hardware.h"
+
+int main(int argc, char* argv[]) {
+    // Initialize hardware
+    Hardware::init();
+    
+    // Get system info
+    string cpu = Hardware::get_cpu_info();
+    float temp = Hardware::get_temperature();
+    float mem_usage = Hardware::get_memory_usage();
+    
+    // GPIO operations
+    Hardware::write_gpio(17, 1);
+    int gpio_val = Hardware::read_gpio(17);
+    
+    // I2C operations
+    Hardware::i2c_read(1, 0x50, 0x00);
+    
+    // System monitoring
+    Hardware::monitor_system();
+    
+    return 0;
+}
+```
+
+### Hardware Interface
+
+```cpp
+// src/applications/src/hardware.h
+class Hardware {
+public:
+    static bool init();
+    
+    // CPU functions
+    static string get_cpu_info();
+    static float get_cpu_usage();
+    static string get_cpu_frequency();
+    
+    // Memory functions
+    static float get_memory_usage();
+    static string get_memory_info();
+    
+    // Temperature functions
+    static float get_temperature();
+    static map<string, float> get_temperature_sensors();
+    
+    // GPIO functions
+    static int read_gpio(int pin);
+    static void write_gpio(int pin, int value);
+    
+    // I2C functions
+    static int i2c_read(int bus, int addr, int reg);
+    static int i2c_write(int bus, int addr, int reg, int value);
+    
+    // System functions
+    static void monitor_system();
+    static string get_uptime();
+    static string get_ip_address();
+};
+```
+
+### Building the Application
+
+```bash
+# Build with CMake
+cd src/applications
+mkdir -p build && cd build
+cmake ..
+make -j$(nproc)
+
+# Run the application
+./rock3-app --help
+./rock3-app --monitor
+./rock3-app --test
+./rock3-app --gpio 17
+./rock3-app --i2c 1 0x50
+```
+
+---
+
+##  Peripheral Verification
+
+### Quick Verification Commands
+
+```bash
+# I2C Verification
+i2cdetect -y 1
+
+# SPI Verification
+spidev_test -D /dev/spidev0.0 -v
+
+# GPIO Verification
+echo 17 > /sys/class/gpio/export
+echo out > /sys/class/gpio/gpio17/direction
+echo 1 > /sys/class/gpio/gpio17/value
+cat /sys/class/gpio/gpio17/value
+
+# HDMI Verification
+cat /sys/class/drm/card0-HDMI-A-1/status
+
+# Ethernet Verification
+ip link show eth0
+ethtool eth0
+
+# USB Verification
+lsusb
+```
+
+### Full Verification Matrix
+
+| Component | Tool | Command | Expected |
+|-----------|------|---------|----------|
+| I2C | i2cdetect | `i2cdetect -y 1` | Device addresses |
+| SPI | spidev_test | `spidev_test -D /dev/spidev0.0` | Transfer success |
+| GPIO | sysfs | `echo 17 > /sys/class/gpio/export` | GPIO exported |
+| HDMI | sysfs | `cat /sys/class/drm/card0-HDMI-A-1/status` | connected/disconnected |
+| Ethernet | ip | `ip link show eth0` | UP/DOWN status |
+| USB | lsusb | `lsusb` | Device list |
+| PWM | sysfs | `echo 0 > /sys/class/pwm/pwmchip0/export` | PWM exported |
+| Temp | sysfs | `cat /sys/class/thermal/thermal_zone0/temp` | Temperature value |
+
+---
+
+##  Docker Environment
+
+### Docker Image Features
+- Ubuntu 22.04 LTS
+- ARM64 cross-compilation toolchain
+- All debugging tools pre-installed
+- CCache for faster builds
+- Mounted volumes for source/output/traces
+
+### Docker Commands
+
+```bash
+# Build image
+cd docker
+docker build -t rock3-builder:latest .
+
+# Start container
+docker-compose up -d
+
+# Enter container
+docker-compose exec builder bash
+
+# Build inside container
+docker-compose exec builder ./scripts/build/build-all.sh
+
+# Stop container
+docker-compose down
+
+# Run with specific user
+UID=$(id -u) GID=$(id -g) docker-compose up -d
+```
+
+---
+
+##  Testing Framework
+
+### Test Suites
+
+#### System Tests (`test-system.sh`)
+- Kernel version check
+- Architecture verification
+- CPU cores detection
+- Memory size verification
+- Root filesystem check
+- Systemd status
+- Process count
+- Load average
+- Swap usage
+- Hostname check
+- Uptime verification
+- DNS resolution
+- Date/Time check
+
+#### Performance Tests (`test-performance.sh`)
+- CPU performance
+- DDR bandwidth (RK3568)
+- Memory performance
+- Storage I/O speed
+- Thermal performance
+- Network speed
+- Interrupt statistics
+- Context switching
+- System load
+- Filesystem performance
+
+#### Peripheral Tests (`test-peripheral.sh`)
+- I2C bus detection
+- SPI device detection
+- GPIO access
+- HDMI detection
+- Ethernet interface
+- USB devices
+- PWM channels
+- Temperature sensors
+- Serial ports
+- Watchdog
+- RTC
+- Audio devices
+
+### Running Tests
+
+```bash
+# Run all tests
+./test/integration/run-all-tests.sh
+
+# Run specific test
+./test/integration/test-system.sh
+./test/integration/test-performance.sh
+./test/integration/test-peripheral.sh
+
+# Using make
+make test
+make test-system
+make test-performance
+make test-peripheral
+```
+
+---
+
+##  Trace Collection
+
+### Collect All Traces
+
+```bash
+# Using script
+./traces/collect-all.sh
+
+# Outputs:
+# traces/dmesg/current.log
+# traces/perf/cpu.data
+# traces/ftrace/trace.dat
+# traces/strace/app.log
+```
+
+### Individual Trace Collection
+
+```bash
+# Dmesg
+dmesg > traces/dmesg/current.log
+dmesg -H -L -T > traces/dmesg/human.log
+
+# Perf (CPU)
+perf record -a -g -F 99 -o traces/perf/cpu.data sleep 10
+perf script -i traces/perf/cpu.data > traces/perf/cpu.txt
+
+# Perf (DDR)
+perf stat -a -e rockchip_ddr/bytes/ sleep 5 > traces/perf/ddr.txt 2>&1
+
+# Ftrace
+sudo trace-cmd record -p function_graph -o traces/ftrace/trace.dat sleep 10
+sudo trace-cmd report -i traces/ftrace/trace.dat > traces/ftrace/trace.txt
+
+# Strace
+strace -f -o traces/strace/app.log ./your_app
+```
+
+---
+
+##  How to Obtain in Console
+
+### Getting System Information
+
+```bash
+# Board info
+cat /proc/cpuinfo
+uname -a
+cat /etc/os-release
+
+# Memory info
+free -h
+cat /proc/meminfo
+
+# Temperature
+cat /sys/class/thermal/thermal_zone0/temp
+for z in /sys/class/thermal/thermal_zone*; do echo "$(basename $z): $(($(cat $z/temp)/1000))°C"; done
+
+# Network
+ip addr show
+ip link show
+ethtool eth0
+
+# USB
+lsusb
+lsusb -t
+
+# I2C
+i2cdetect -l
+i2cdetect -y 1
+
+# GPIO
+ls /sys/class/gpio/
+```
+
+### Getting Debug Information
+
+```bash
+# Kernel messages
+dmesg | tail -50
+dmesg -w
+
+# Running processes
+ps aux
+top
+htop
+
+# Open files
+lsof
+
+# Network connections
+ss -tuln
+netstat -tuln
+
+# Disk usage
+df -h
+du -sh *
+```
+
+### Getting Performance Data
+
+```bash
+# CPU performance
+perf stat -a sleep 1
+perf top
+
+# DDR performance
+perf stat -a -e rockchip_ddr/bytes/ sleep 1
+
+# I/O performance
+iostat -x 1 5
+iotop
+
+# System load
+uptime
+vmstat 1 5
+mpstat -P ALL 1
+```
+
+### Getting Trace Data
+
+```bash
+# Ftrace
+echo function > /sys/kernel/debug/tracing/current_tracer
+echo 1 > /sys/kernel/debug/tracing/tracing_on
+cat /sys/kernel/debug/tracing/trace
+echo 0 > /sys/kernel/debug/tracing/tracing_on
+
+# Perf recording
+perf record -a -g -F 99 sleep 10
+perf report --stdio
+
+# Strace
+strace -f -o strace.log ./your_app
+cat strace.log | head -50
+```
+
+---
+
+##  Troubleshooting
+
+### Common Issues and Solutions
+
+#### Issue: `perf: command not found`
+```bash
+sudo apt install linux-tools-common linux-tools-generic
+sudo apt install linux-tools-$(uname -r)
+```
+
+#### Issue: DDR events not found
+```bash
+# Check if running on RK3568
+cat /proc/cpuinfo | grep "Model"
+# Should show: "Model: Radxa ROCK 3 Model B"
+
+# Check kernel config
+grep CONFIG_ROCKCHIP_DDR_PMU /boot/config-$(uname -r)
+```
+
+#### Issue: ftrace not available
+```bash
+# Mount debugfs
+sudo mount -t debugfs none /sys/kernel/debug
+
+# Check if ftrace is enabled
+cat /sys/kernel/debug/tracing/available_tracers
+```
+
+#### Issue: GPIO access denied
+```bash
+# Add user to gpio group
+sudo usermod -a -G gpio $USER
+
+# Or run as root
+sudo su -
+```
+
+#### Issue: I2C bus not found
+```bash
+# Enable I2C in device tree
+# Check if I2C is enabled
+dmesg | grep i2c
+
+# Load I2C modules
+sudo modprobe i2c-dev
+```
+
+#### Issue: Docker permission denied
+```bash
+# Add user to docker group
+sudo usermod -a -G docker $USER
+
+# Logout and login again
+# Or use sudo
+sudo docker-compose up -d
+```
+
+---
+
+##  Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Coding Standards
+- C++: C++17 standard
+- Shell: Bash 4.0+
+- Docker: Dockerfile best practices
+- Documentation: Markdown format
+
+---
+
+##  References
+
+- [Rockchip RK3568 Datasheet](https://www.rock-chips.com/)
+- [Radxa Rock 3 Documentation](https://wiki.radxa.com/Rock3)
+- [Linux Kernel Documentation](https://www.kernel.org/doc/)
+- [perf Documentation](https://perf.wiki.kernel.org/)
+- [ftrace Documentation](https://docs.kernel.org/trace/ftrace.html)
+- [Brendan Gregg's Linux Performance](https://www.brendangregg.com/linuxperf.html)
+
+---
+
+##  Version
+
+**Current Version**: 1.0.0
+
+```
+Build Date: $(date)
+Kernel Version: 5.10.110
+Platform: Rock 3 Model B (RK3568)
+```
+
+---
