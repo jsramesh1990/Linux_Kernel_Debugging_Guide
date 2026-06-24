@@ -27,28 +27,28 @@
 This repository provides a **complete development and debugging platform** for the **Radxa Rock 3 Model B** single-board computer based on the **RK3568** processor.
 
 ### Key Features
-- ✅ **Cross-compilation environment** for ARM64
-- ✅ **Full kernel build system** with Rock 3 patches
-- ✅ **Comprehensive debugging tools** (perf, ftrace, strace, dmesg)
-- ✅ **DDR Performance Monitoring** (RK3568 PMU support)
-- ✅ **Peripheral verification suite** (I2C, SPI, GPIO, HDMI, USB)
-- ✅ **Docker-based reproducible builds**
-- ✅ **Automated testing framework**
-- ✅ **Trace collection and analysis tools**
+-  **Cross-compilation environment** for ARM64
+-  **Full kernel build system** with Rock 3 patches
+-  **Comprehensive debugging tools** (perf, ftrace, strace, dmesg)
+-  **DDR Performance Monitoring** (RK3568 PMU support)
+-  **Peripheral verification suite** (I2C, SPI, GPIO, HDMI, USB)
+-  **Docker-based reproducible builds**
+-  **Automated testing framework**
+-  **Trace collection and analysis tools**
 
 ### Project Flow
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                     ROCK 3 MODEL B PLATFORM                        │
+│                     ROCK 3 MODEL B PLATFORM                         │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                     │
-│   [Development]  →  [Build]  →  [Deploy]  →  [Debug]  →  [Verify]  │
+│   [Development]  →  [Build]  →  [Deploy]  →  [Debug]  →  [Verify]   │
 │                                                                     │
-│   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐       │
-│   │  Docker  │   │  Kernel  │   │   Rock   │   │   perf   │       │
-│   │  Image   │ → │  Build   │ → │    3     │ → │  ftrace  │       │
-│   │          │   │          │   │  Board   │   │  strace  │       │
-│   └──────────┘   └──────────┘   └──────────┘   └──────────┘       │
+│   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐         │
+│   │  Docker  │   │  Kernel  │   │   Rock   │   │   perf   │         │
+│   │  Image   │ → │  Build   │ → │    3     │ → │  ftrace  │         │
+│   │          │   │          │   │  Board   │   │  strace  │         │
+│   └──────────┘   └──────────┘   └──────────┘   └──────────┘         │
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -61,11 +61,11 @@ This repository provides a **complete development and debugging platform** for t
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│                           ROCK 3 MODEL B SYSTEM ARCHITECTURE                     │
+│                           ROCK 3 MODEL B SYSTEM ARCHITECTURE                    │
 ├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                   │
+│                                                                                 │
 │  ┌──────────────────────────────────────────────────────────────────────────┐   │
-│  │                         APPLICATION LAYER                                 │   │
+│  │                         APPLICATION LAYER                                │   │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │   │
 │  │  │  rock3-app   │  │   System     │  │   Monitor    │  │   Test       │  │   │
 │  │  │  (C++)       │  │   Services   │  │   Dashboard  │  │   Suite      │  │   │
